@@ -3,6 +3,7 @@ Kwikicart.js 0.0.1
 Kwikicart is a weird javascript shopping cart. Intending to be a quick solution for connecting the browser 'store' to end points on your server. Store creation should be easy and not dependent on Javascript to work. The best way to illustrate is by jumping in.
 
 Kwikicart makes some markup assumptions:
+
 	Product markup:
 		* Each product shares a class (.product by default)
 		* An unique ID is attached to the outlined product node.
