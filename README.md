@@ -6,12 +6,12 @@ Kwikicart makes some markup assumptions:
 
 	Product markup:
 		* Each product shares a class (.product by default)
-		* An unique ID is attached to the outlined product node.
+		* A unique ID is attached to the outlined product node in the form of an ID attribute
 		* A form for the add action
 		* A form for the remove action
 		* A form for the check item action
 
-	Cart / Buggy markup :
+	Cart / Buggy markup:
 		* A form for the clear action
 		* A form for the total action
 		* A form for the checkout action 
@@ -61,6 +61,40 @@ function(store, ready) {
 		// Assume the example code is in here.
 	});
 });
+```
+
+When creating the cart you can define any of the following options in a passed object:
+```js
+{
+	expires: 1,
+	taxMultiplier: 0.06,
+	currency: 'USD',
+	productNode: '.product',
+	cartItems: '.cart-products',
+	cartTotal: '.cart-total',
+	addForm: '[name=itemaddform]',
+	removeForm: '[name=itemremoveform]',
+	checkForm: '[name=itemcheckform]',
+	clearForm: '[name=clearcartform]',
+	totalForm: '[name=totalcartform]',
+	checkoutForm: '[name=checkoutform]',
+	addAction: true,
+	checkoutAction: true,
+	removeAction: true,
+	clearAction: true,
+	totalAction: true,
+	incrementAction: true,
+	decrementAction: true,
+	onCheck: null,
+	onRemove: null,
+	onClear: null,
+	onCheckout: null,
+	onAdd: null,
+	onDecrement: null,
+	onIncrement: null,
+	onTotal: null,
+	xhrObj: {handleAs: 'json'}
+}
 ```
 
 ## Adding ##
