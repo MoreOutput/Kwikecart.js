@@ -30,7 +30,7 @@ Lets assume a product on the page is marked up like the following:
 			</div>
 		</div>
 		<!-- Our Actions that Kwikicart.js will call on each related call -->
-		<form method="post" action="./add" name="itemaddform">
+		<form method="post" action="./add" name="itemadd">
 			<div class="itemFields">
 				<input type="hidden" name="name" value="Worlds Best Item" />
 				<input type="hidden" name="pid" value="3423" />
@@ -40,13 +40,22 @@ Lets assume a product on the page is marked up like the following:
 		</form>
 
 		<form method="post" action="./remove" name="itemremoveform">
+			<input type="hidden" name="name" value="Worlds Best Item" />
+			<input type="hidden" name="pid" value="3423" />
+			<input type="hidden" name="price" value="45.00" />
 			<button type="submit" name="removecart">Remove</button>
 		</form>
 
-		<form method="post" action="./check" name="itemcheckform">
+		<form method="get" action="./check" name="itemcheckform">
 			<input type="hidden" name="pid" value="3423" />
 		</form>
 	</li>
+
+
+	<!-- You can also outline the forms in a more genreral way -->
+	<!-- If forms are appended like this then the fields in the forms add / remove events are sent, any fields nested here are also appended -->
+	<form method="get" action="./check" name="itemcheck"></form>
+
 ```
 
 ## Loading and Setup ##
@@ -72,12 +81,16 @@ When creating the cart you can define any of the following options in a passed o
 	productNode: '.product',
 	cartItems: '.cart-products',
 	cartTotal: '.cart-total',
-	addForm: '[name=itemaddform]',
-	removeForm: '[name=itemremoveform]',
-	checkForm: '[name=itemcheckform]',
-	clearForm: '[name=clearcartform]',
-	totalForm: '[name=totalcartform]',
-	checkoutForm: '[name=checkoutform]',
+	idField: '[name=pid]',
+	priceField: '[name=price]',
+	nameField: '[name=name]',
+	amountField: '[name=quantity]',
+	addForm: '[name=itemadd]',
+	removeForm: '[name=itemremove]',
+	checkForm: '[name=itemcheck]',
+	clearForm: '[name=clearcart]',
+	totalForm: '[name=totalcart]',
+	checkoutForm: '[name=checkout]',
 	addAction: true,
 	checkoutAction: true,
 	removeAction: true,
@@ -160,6 +173,9 @@ cart.remove();
 Removes all but keeps cookie data:
 ```js
 cart.remove(false);
+
+Decrement the item by two with:
+cart.remove('product-3423', 2); 
 ```
 ## Getting Totals ##
 

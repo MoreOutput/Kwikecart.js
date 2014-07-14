@@ -5,40 +5,34 @@
 		<title>Kwikicart</title>
 	</head>
 	<body>
-		<div id="content">
+		<div>
 			<section id="products">		
 				<header>
 					<h1>Products</h1>		
 				</header>	
 				<ul>
-					<li class="product" id="product-3423">
+					<li class="product" id="3423">
 						<h2 class="product-name">
-							<a href="">Worlds Best Item</a>
+							<a href="#">Worlds Best Item</a>
 						</h2>
 
-						<div>
-							<div class="product-info">
-								<div class="product-pid">3423</div>
-								<div class="product-price">$45.00</div>
-							</div>
+						<div class="product-info">
+							<div class="product-pid">3423</div>
+							<div class="product-price">$45.00</div>
 						</div>
 
 						<!-- Our Actions that Kwikicart.js will call on each related call -->
-						<form method="post" action="./add" name="itemaddform">
-							<div class="itemFields">
-								<input type="hidden" name="name" value="Worlds Best Item" />
-								<input type="hidden" name="pid" value="3423" />
-								<input type="hidden" name="price" value="45.00" />
-							</div>
+						<form method="post" action="./add" name="itemadd">
+							<input type="hidden" name="name" value="Worlds Best Item" />
+							<input type="hidden" name="pid" value="3423" />
+							<input type="hidden" name="price" value="45.00" />
 							<button type="submit" name="addtocart">Add to Cart</button>
 						</form>
-
-						<form method="post" action="./remove" name="itemremoveform">
-							<button type="submit" name="removecart">Remove</button>
-						</form>
-
-						<form method="post" action="./check" name="itemcheckform">
+						<form method="post" action="./remove" name="itemremove">
+							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="pid" value="3423" />
+							<input type="hidden" name="price" value="45.00" />
+							<button type="submit" name="removecart">Remove</button>
 						</form>
 					</li>
 				</ul>
@@ -68,22 +62,15 @@
 					<input type="hidden" id="total" value="" name="total" />
 					<button type="submit" name="checkout" id="submitbtn">Checkout</button>
 				</form> 
-				
-				<div id="cart-actions">			
-					<form method="post" action="./total" name="totalcartform">
-						<button type="submit" name="removecart">Total Cart</button>
-					</form>
-
-					<form method="post" action="./clear" name="clearcartform">
-						<button type="submit" name="removecart">Clear</button>
-					</form>
-				</div>
 			</section>
 		</aside>
 
-		<form method="post" action="./increment" name="itemremoveform">
-			
-		</form>
+		<!-- If forms are appended like this then the fields in the forms add / remove events are sent, any fields nested here are also appended -->
+		<form method="post" action="./increment" name="itemincrement"></form>
+		<form method="post" action="./decrement" name="itemdecrement"></form>
+		<form method="get" action="./check" name="itemcheck"></form>
+		<form method="get" action="./total" name="totalcart"></form>
+		<form method="post" action="./clear" name="clearcart"></form>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dojo/dojo.js"></script>
 		<script>
@@ -95,50 +82,50 @@
 				'use strict';
 				ready(function () {		
 					var products = [
-						{ id: "product-3423", name: "Product1", quantity: 1, price: 45.00},
-						{ id: "product-3424", name: "Product2", quantity: 1, price: 15.00},
-						{ id: "product-3425", name: "Product3", quantity: 1, price: 25.00},
-						{ id: "product-3426", name: "Product4", quantity: 1, price: 55.25},
-						{ id: "product-3427", name: "Product5", quantity: 1, price: 145.00},
-						{ id: "product-3428", name: "Product6", quantity: 1, price: 425.00},
-						{ id: "product-3429", name: "Product7", quantity: 1, price: 325.00},
-						{ id: "product-3430", name: "Product8", quantity: 1, price: 145.00}
+						{ id: "3423", name: "Product1", quantity: 1, price: 45.00},
+						{ id: "3424", name: "Product2", quantity: 1, price: 15.00},
+						{ id: "3425", name: "Product3", quantity: 1, price: 25.00},
+						{ id: "3426", name: "Product4", quantity: 1, price: 55.25},
+						{ id: "3427", name: "Product5", quantity: 1, price: 145.00},
+						{ id: "3428", name: "Product6", quantity: 1, price: 425.00},
+						{ id: "3429", name: "Product7", quantity: 1, price: 325.00},
+						{ id: "3430", name: "Product8", quantity: 1, price: 145.00}
 					],
 					// Setting up the store.
 					cart = store.create({
 						expires: 1
 					});
 					
-					//cart.add('#product-3423');
+					cart.add('#3423');
 					
-					// Adding, in .product expected form name: itemaddform
+					// Adding, in .product expected form name: itemadd
 					//cart.add('#product-3423');
 					//cart.add({ id: "product-3423", name: "Product1", quantity: 1, price: 45.00});
 					//cart.add(products);
 
-					// Removing, in .product expected form name: itemremoveform
+					// Removing, in .product expected form name: itemremove
 					//cart.remove('product-3423'); // Fully removes product
 					//cart.remove(products); // Fully removes product set
 					//cart.remove(); // Fully removes all products
 					//cart.remove(false); // Removes all but keeps cookie data
 
-					// Increment, in .product expected form name: itemaddform
+					// Increment, in .product expected form name: itemadd
 					//cart.add('#product-3423', 2);
 					//cart.add({ id: "product-3423", name: "Product1", quantity: 1, price: 45.00}, 2);
 					//cart.add(products, 2);
 
-					// Decrement, in .product expected form name: itemaddform
+					// Decrement, in .product expected form name: itemadd
 					//cart.remove('product-3423', 1); 
 
-					// Data Checking, in .product expected form name: itemcheckform
+					// Data Checking, in .product expected form name: itemcheck
 					//cart.check('product-3423'); // Get item data from server
 					//cart.check('product-3423', false); // Get item data from markup
 					
-					// Totaling, expected form name: totalcartform
+					// Totaling, expected form name: totalcart
 					//cart.total(); // From DOM data
 					//cart.total(true); // From server
 
-					// Checkout, expected form name: checkoutform
+					// Checkout, expected form name: checkout
 					//cart.checkout() // Routing to next area
 				});
 			});

@@ -5,8 +5,7 @@ define(['dojo/_base/lang', 'dojo/dom', 'dojo/dom-construct', 'dojo/query',
 	'dojo/_base/event', 'dojo/request', 'dojo/ready'], 
 function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready) {
 	'use strict';	
-	var Cart = function (options) {
-				
+	var Cart = function (options) {	
 		this.currentTotal = 0; // This is only set when total() is ran
 		this.items = [];
 		this.options = {
@@ -16,12 +15,16 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			productNode: '.product',
 			cartItems: '.cart-products',
 			cartTotal: '.cart-total',
-			addForm: '[name=itemaddform]',
-			removeForm: '[name=itemremoveform]',
-			checkForm: '[name=itemcheckform]',
-			clearForm: '[name=clearcartform]',
-			totalForm: '[name=totalcartform]',
-			checkoutForm: '[name=checkoutform]',
+			idField: '[name=pid]',
+			priceField: '[name=price]',
+			nameField: '[name=name]',
+			amountField: '[name=quantity]',
+			addForm: '[name=itemadd]',
+			removeForm: '[name=itemremove]',
+			checkForm: '[name=itemcheck]',
+			clearForm: '[name=clearcart]',
+			totalForm: '[name=totalcart]',
+			checkoutForm: '[name=checkout]',
 			addAction: true,
 			checkoutAction: true,
 			removeAction: true,
@@ -40,6 +43,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			xhrObj: {handleAs: 'json'}
 		};
 
+		console.log('Constructor');
+
 		return this;
 	}
 
@@ -48,6 +53,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		checkoutEvt,
 		clearEvt,
 		totalEvt;
+
+		console.log('Call to create()');
 
 		cart.options = lang.mixin(cart.options, options);
 
@@ -80,6 +87,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 	Cart.prototype.setCartFromCookies = function (fn){
 		var cart = this;	
 
+		console.log('Call to setCartFromCookies()');
+
 		if (cookie('nacart') !== 'null') {
 			cart.items = JSON.parse(cookie('nacart'));
 		} else {
@@ -99,10 +108,11 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 
 	// Turn non obj item references to item objects based on dom data
 	Cart.prototype.createItemObj = function (itemData) {
+		console.log('Call to createItemObj()');
 		return {
 			id: (function() {
-				if (query(itemData).query('[name=name]').length > 0) {
-					return query(itemData).query('[name=name]')[0].value;
+				if (query(itemData).query('[name=pid]').length > 0) {
+					return query(itemData).query('[name=pid]')[0].value;
 				} else {
 					return itemData.id;
 				}
@@ -126,9 +136,11 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 	}
 	
 	// Adds item to cart
-	Cart.prototype.add = function (items, amountToAdd, evt) {		
+	Cart.prototype.add = function (items, amountToAdd, callback) {		
 		var cart = this,
 		add = true;
+
+		console.log('Call to add()');
 
 		if (typeof items === 'string') {
 			items = [cart.createItemObj(items)];
@@ -177,13 +189,15 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 	      	request.post(query(cart.options.addForm)[0].action, cart.options.xhrObj).then(function(r) {
 				console.log(r);
 			});
-	}
+		}
 		return cart;
 	};
 
 	// Confirm an item is in the DOM
 	Cart.prototype.checkItemDOM = function (id, fn) {
 		var checkNode = query(this.options.cartItems + ' .' + id)[0];
+
+		console.log('Call to checkItemDOM()');
 
 		if (checkNode !== undefined) {
 			return fn(true);
@@ -197,6 +211,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		var cart = this,
 		increment = true;
 
+		console.log('Call to incremnent()');
+
 		if (typeof cart.options.onIncrement === 'function') {
 	   		increment = cart.options.onIncrement();
 		}
@@ -204,15 +220,19 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		cart.items.forEach(function (item2) {
 			if (item2.id === item.id) {
 				item2.quantity = item2.quantity + 1;
+				query(cart.options.cartItems + ' .' + item.id).query('[name=quantity]')[0].value = item2.quantity;
+
 				cookie('nacart', JSON.stringify(cart.items), 
 					{expires: cart.options.expires});
 			}
 		});			
 	};
 
-	Cart.prototype.remove = function (items, amountToAdd, evt) {
+	Cart.prototype.remove = function (items, amountToRemove, callback) {
 		var cart = this,
 		remove = true;
+
+		console.log('Call to remove()');
 
 		if (typeof cart.options.onRemove === 'function') {
 	   		remove = cart.options.onRemove();
@@ -268,6 +288,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		var cart = this,
 		decrement = true;
 
+		console.log('Call to decrement()');
+
 		if (typeof cart.options.onDecrement === 'function') {
 	   		decrement = cart.options.onDecrement();
 		}
@@ -289,23 +311,21 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 	Cart.prototype.addToDOM = function (item) {	
 		var qNode = query('#' + item.id + '_quantity'),
 		itemTotal = query(this.options.cartItems + ' li').length;	
+
+		console.log('Call to addToDom()');
 	
 		if (qNode.length === 0) {	
 			domC.create('li', {
 			className: item.id,
 			innerHTML: '<div class="title">' + item.name + '</div>' +  
-				'<input type="hidden" name="item_name_' + (itemTotal + 1) + 
-				'" value="' + item.name + '" />' + 
-				'<input type="hidden" name="item_number_' + (itemTotal + 1) + 
-				'" value="' + item.id + '" />' +	'<input name="amount_' + 
-				(itemTotal + 1) + '" type="hidden" value="' + item.price + 
+				'<input type="hidden" name="name" value="' + item.name + '" />' + 
+				'<input type="hidden" name="pid" value="' + item.id + '" />' +	'<input name="amount" type="hidden" value="' + item.price + 
 				'" />' + '<input id="' + item.id + 
-				'_quantity" type="text" name="quantity_' + (itemTotal + 1) + 
-				'" value="' + item.quantity + '" /><div class="price">' + 
+				'_quantity" type="text" name="quantity" value="' + item.quantity + '" /><div class="price">' + 
 				item.price + '</div>' + 
-				'<input name="itemprice" type="hidden" value="' + item.price 
-				+ '" />' + '<a id="' + item.id +
-				'_remove" href="">Remove</a>'}, query(this.options.cartItems)[0], 'end');		
+				'<input name="price" type="hidden" value="' + item.price 
+				+ '" />' + '<a id="' + item.id + '_remove" href="">Remove</a>'}, 
+				query(this.options.cartItems)[0], 'end');		
 			
 			this.total();
 			this.setupRemove(item);
@@ -320,6 +340,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			cart.remove(item, h);
 			cart.total();
 		});					
+
+		console.log('Call to setupRemove()');
 	};
 
 	// totals the cart
@@ -336,18 +358,10 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		
 		this.cartTotal = total;
 
+		console.log('Call to total()');
+
 		return cart;
 	};
-
-	Cart.prototype.clearCart = function (fn) {
-		cookie('nacart', null, {expires: -1});
-	
-		if (typeof fn === 'function') {
-			return fn();
-		}
-
-		return this;
-	}
 	
 	return new Cart();
 });
