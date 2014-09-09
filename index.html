@@ -35,6 +35,30 @@
 							<button type="submit" name="removecart">Remove</button>
 						</form>
 					</li>
+					<li class="product" id="1423">
+						<h2 class="product-name">
+							<a href="#">Worlds Second Best Item</a>
+						</h2>
+
+						<div class="product-info">
+							<div class="product-pid">1423</div>
+							<div class="product-price">$45.00</div>
+						</div>
+
+						<!-- Our Actions that Kwikicart.js will call on each related call -->
+						<form method="post" action="./add" name="itemadd">
+							<input type="hidden" name="name" value="Worlds Second Best Item" />
+							<input type="hidden" name="pid" value="1423" />
+							<input type="hidden" name="price" value="45.00" />
+							<button type="submit" name="addtocart">Add to Cart</button>
+						</form>
+						<form method="post" action="./remove" name="itemremove">
+							<input type="hidden" name="name" value="Worlds Best Item" />
+							<input type="hidden" name="pid" value="1423" />
+							<input type="hidden" name="price" value="45.00" />
+							<button type="submit" name="removecart">Remove</button>
+						</form>
+					</li>
 				</ul>
 			</section>
 		</div>
@@ -47,7 +71,7 @@
 				<div class="cart-total">
 				</div>
 
-				<form id="checkoutfrm" action="./checkout" method="post" name="cartcheckout">	
+				<form id="checkoutfrm" action="./checkout" method="post" name="cartcheck out">	
 					<input type="hidden" name="cmd" value="_cart" />
 					<input type="hidden" name="redirect_cmd" value="_xclick" />
 					<input type="hidden" name="business" value="info@example.com" />
@@ -65,43 +89,51 @@
 			</section>
 		</aside>
 
-		<!-- If forms are appended like this then the fields in the forms add / remove events are sent, any fields nested here are also appended -->
-		<form method="post" action="./increment" name="itemincrement"></form>
-		<form method="post" action="./decrement" name="itemdecrement"></form>
+		<!-- defining the expected cart actions -->
 		<form method="get" action="./check" name="itemcheck"></form>
 		<form method="get" action="./total" name="totalcart"></form>
 		<form method="post" action="./clear" name="clearcart"></form>
 
-		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dojo/dojo.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.10.0/dojo/dojo.js"></script>
 		<script>
 			// kwikicart.js
 			require({
 				baseUrl: 'js/'
-			}, ['js/kwikicart', 'dojo/ready'], 
-			function(store, ready) {
+			}, ['js/kwikicart', 'dojo/query', 'dojo/ready'], 
+			function(store, query, ready) {
 				'use strict';
-				ready(function () {		
+				ready(function () {
+					// Test Array	
 					var products = [
-						{ id: "3423", name: "Product1", quantity: 1, price: 45.00},
-						{ id: "3424", name: "Product2", quantity: 1, price: 15.00},
-						{ id: "3425", name: "Product3", quantity: 1, price: 25.00},
-						{ id: "3426", name: "Product4", quantity: 1, price: 55.25},
-						{ id: "3427", name: "Product5", quantity: 1, price: 145.00},
-						{ id: "3428", name: "Product6", quantity: 1, price: 425.00},
-						{ id: "3429", name: "Product7", quantity: 1, price: 325.00},
-						{ id: "3430", name: "Product8", quantity: 1, price: 145.00}
+						{ id: '3423', name: 'Product1', quantity: 1, price: 45.00},
+						{ id: '3424', name: 'Product2', quantity: 1, price: 15.00},
+						{ id: '3425', name: 'Product3', quantity: 1, price: 25.00},
+						{ id: '3426', name: 'Product4', quantity: 1, price: 55.25},
+						{ id: '3427', name: 'Product5', quantity: 1, price: 145.00},
+						{ id: '3428', name: 'Product6', quantity: 1, price: 425.00},
+						{ id: '3429', name: 'Product7', quantity: 1, price: 325.00},
+						{ id: '3430', name: 'Product8', quantity: 1, price: 145.00}
 					],
-					// Setting up the store.
+					// Setting up the store, and creating a cart for the user
 					cart = store.create({
 						expires: 1
 					});
 					
-					cart.add('#3423');
-					
-					// Adding, in .product expected form name: itemadd
-					//cart.add('#product-3423');
-					//cart.add({ id: "product-3423", name: "Product1", quantity: 1, price: 45.00});
-					//cart.add(products);
+					cart.remove();
+
+					// Adding techniques
+					cart.add(query('.product'));
+					cart.add(products);
+					cart.add('#1423');
+					cart.add({
+						id: '3423', 
+						name: 'Product1', 
+						quantity: 1, 
+						price: 45.00
+					});
+
+					// Incrementing
+					cart.add('#1423', 10);
 
 					// Removing, in .product expected form name: itemremove
 					//cart.remove('product-3423'); // Fully removes product

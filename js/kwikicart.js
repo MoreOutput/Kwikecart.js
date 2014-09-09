@@ -1,17 +1,17 @@
-/* ECART
-Rocky Bevins moreoutput@gmail.com, v0.0.1 */
+/* Rocky Bevins moreoutput@gmail.com, v0.0.5 */
 define(['dojo/_base/lang', 'dojo/dom', 'dojo/dom-construct', 'dojo/query', 
 	'dojo/_base/array', 'dojo/cookie', 'dojo/dom-class', 'dojo/on', 
 	'dojo/_base/event', 'dojo/request', 'dojo/ready'], 
 function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready) {
 	'use strict';	
 	var Cart = function (options) {	
-		this.currentTotal = 0; // This is only set when total() is ran
+		this.currentTotal = 0; // This is set when total() is called
 		this.items = [];
 		this.options = {
-			expires: 1,
+			expires: 1, // Cookie expiration
 			taxMultiplier: 0.06,
 			currency: 'USD',
+			// Related DOM Data
 			productNode: '.product',
 			cartItems: '.cart-products',
 			cartTotal: '.cart-total',
@@ -19,12 +19,14 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			priceField: '[name=price]',
 			nameField: '[name=name]',
 			amountField: '[name=quantity]',
+			// Forms that control the server calls
 			addForm: '[name=itemadd]',
 			removeForm: '[name=itemremove]',
 			checkForm: '[name=itemcheck]',
 			clearForm: '[name=clearcart]',
 			totalForm: '[name=totalcart]',
 			checkoutForm: '[name=checkout]',
+			// XHR Action Override; will result in client side action being taken only
 			addAction: true,
 			checkoutAction: true,
 			removeAction: true,
@@ -32,6 +34,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			totalAction: true,
 			incrementAction: true,
 			decrementAction: true,
+			// Events
 			onCheck: null,
 			onRemove: null,
 			onClear: null,
@@ -84,7 +87,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 	};
 
 	// Outlines cart items from cookie information
-	Cart.prototype.setCartFromCookies = function (fn){
+	Cart.prototype.setCartFromCookies = function (fn) {
 		var cart = this;	
 
 		console.log('Call to setCartFromCookies()');
@@ -111,14 +114,15 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		console.log('Call to createItemObj()');
 		return {
 			id: (function() {
-				if (query(itemData).query('[name=pid]').length > 0) {
+				if (!itemData.id) {
+					console.log(222)
 					return query(itemData).query('[name=pid]')[0].value;
 				} else {
 					return itemData.id;
 				}
 			}()),
 			name: (function() {
-				if (query(itemData).query('[name=name]').length > 0) {
+				if (!itemData.name) {
 					return query(itemData).query('[name=name]')[0].value;
 				} else {
 					return itemData.name;
@@ -126,26 +130,29 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			}()),
 			quantity: 1,
 			price: (function() {
-				if (query(itemData).query('[name=price]').length > 0) {
+				if (!itemData.price) {
 					return parseFloat(query(itemData).query('[name=price]')[0].value);
 				} else {
 					return parseFloat(itemData.price);
 				}
 			}())
 		};
-	}
+	};
 	
 	// Adds item to cart
 	Cart.prototype.add = function (items, amountToAdd, callback) {		
 		var cart = this,
+		i = 0,
 		add = true;
 
 		console.log('Call to add()');
 
-		if (typeof items === 'string') {
+		if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
 			items = [cart.createItemObj(items)];
-		} else if (typeof items === 'object' && items.length === undefined) {
-			items = [items];
+		} else {
+			arr.forEach(items, function(item, i) {
+				items[i] = cart.createItemObj(item);
+			});
 		}
 
 		if (typeof cart.options.onAdd === 'function') {
@@ -153,10 +160,10 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 		}
 		
 		if (add === true) {
-			if (amountToAdd > 0) {
-				arr.forEach(amountToAdd, function(item, i) {
-					console.log('s')
-				});
+			if (items.length === 1 && !isNaN(amountToAdd) && amountToAdd > 0) {
+				for (i; i < amountToAdd - 1; i += 1) {
+					items.push(items[0]);
+				}
 			}
 
 			arr.forEach(items, function(item, i)  {
@@ -185,10 +192,12 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 					}
 				});
 			});
-					    
-	      	request.post(query(cart.options.addForm)[0].action, cart.options.xhrObj).then(function(r) {
-				console.log(r);
-			});
+			
+			if (cart.options.addAction) {
+	      		request.post(query(cart.options.addForm)[0].action, cart.options.xhrObj).then(function(r) {
+					console.log(r);
+				});
+	      	}
 		}
 		return cart;
 	};
@@ -209,7 +218,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 	// increases the amount property of the item object in the cookie by 1
 	Cart.prototype.increment = function (item, h) {
 		var cart = this,
-		increment = true;
+		increment = cart.options.incrementAction;
 
 		console.log('Call to incremnent()');
 
@@ -221,6 +230,12 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			if (item2.id === item.id) {
 				item2.quantity = item2.quantity + 1;
 				query(cart.options.cartItems + ' .' + item.id).query('[name=quantity]')[0].value = item2.quantity;
+
+				if (increment) {
+			      	request.post(query(cart.options.addForm)[0].action, cart.options.xhrObj).then(function(r) {
+						console.log(r);
+					});
+				}
 
 				cookie('nacart', JSON.stringify(cart.items), 
 					{expires: cart.options.expires});
@@ -281,12 +296,12 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 				});
 		    }
 		}
-	}
+	};
 
 	// decreases the amount property of the item object in the cookie by 1
 	Cart.prototype.decrement = function (item, h) {
 		var cart = this,
-		decrement = true;
+		decrement = cart.options.decrementAction;
 
 		console.log('Call to decrement()');
 
@@ -300,6 +315,12 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 
 				if (item2.quantity < 0) {
 					item2.quantity = 0;
+				}
+
+				if (decrement) {
+			      	request.post(query(cart.options.removeForm)[0].action, cart.options.xhrObj).then(function(r) {
+						console.log(r);
+					});
 				}
 
 				cookie('nacart', JSON.stringify(cart.items), 
@@ -319,8 +340,9 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			className: item.id,
 			innerHTML: '<div class="title">' + item.name + '</div>' +  
 				'<input type="hidden" name="name" value="' + item.name + '" />' + 
-				'<input type="hidden" name="pid" value="' + item.id + '" />' +	'<input name="amount" type="hidden" value="' + item.price + 
-				'" />' + '<input id="' + item.id + 
+				'<input type="hidden" name="pid" value="' + item.id + '" />' + 
+				'<input name="amount" type="hidden" value="' + item.price + '" />' + 
+				'<input id="' + item.id + 
 				'_quantity" type="text" name="quantity" value="' + item.quantity + '" /><div class="price">' + 
 				item.price + '</div>' + 
 				'<input name="price" type="hidden" value="' + item.price 

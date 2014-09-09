@@ -19,46 +19,47 @@ Kwikicart makes some markup assumptions:
 Lets assume a product on the page is marked up like the following:
 
 ```html
-	<li class="product" id="product-3423">
-		<h2 class="product-name">
-			<a href="">Worlds Best Item</a>
-		</h2>
-		<div>
-			<div class="product-info">
-				<div class="product-pid">3423</div>
-				<div class="product-price">$45.00</div>
-			</div>
+<li class="product" id="product-3423">
+	<h2 class="product-name">
+		<a href="">Worlds Best Item</a>
+	</h2>
+	<div>
+		<div class="product-info">
+			<div class="product-pid">3423</div>
+			<div class="product-price">$45.00</div>
 		</div>
-		<!-- Our Actions that Kwikicart.js will call on each related call -->
-		<form method="post" action="./add" name="itemadd">
-			<div class="itemFields">
-				<input type="hidden" name="name" value="Worlds Best Item" />
-				<input type="hidden" name="pid" value="3423" />
-				<input type="hidden" name="price" value="45.00" />
-			</div>
-			<button type="submit" name="addtocart">Add to Cart</button>
-		</form>
-
-		<form method="post" action="./remove" name="itemremoveform">
+	</div>
+	<!-- Our Actions that Kwikicart.js will call on each related call -->
+	<form method="post" action="./add" name="itemadd">
+		<div class="itemFields">
 			<input type="hidden" name="name" value="Worlds Best Item" />
 			<input type="hidden" name="pid" value="3423" />
 			<input type="hidden" name="price" value="45.00" />
-			<button type="submit" name="removecart">Remove</button>
-		</form>
+		</div>
+		<button type="submit" name="addtocart">Add to Cart</button>
+	</form>
 
-		<form method="get" action="./check" name="itemcheckform">
-			<input type="hidden" name="pid" value="3423" />
-		</form>
-	</li>
+	<form method="post" action="./remove" name="itemremoveform">
+		<input type="hidden" name="name" value="Worlds Best Item" />
+		<input type="hidden" name="pid" value="3423" />
+		<input type="hidden" name="price" value="45.00" />
+		<button type="submit" name="removecart">Remove</button>
+	</form>
+
+	<form method="get" action="./check" name="itemcheckform">
+		<input type="hidden" name="pid" value="3423" />
+	</form>
+</li>
 
 
-	<!-- You can also outline the forms in a more genreral way -->
-	<!-- If forms are appended like this then the fields in the forms add / remove events are sent, any fields nested here are also appended -->
-	<form method="get" action="./check" name="itemcheck"></form>
+<!-- You can also outline the forms in a more genreral way -->
+<!-- If forms are appended like this then the fields in the forms 
+add / remove events are sent, any fields nested here are also appended -->
+<form method="get" action="./check" name="itemcheck"></form>
 
 ```
 
-## Loading and Setup ##
+## Loading and Setup for DOJO 1.9+ ##
 ```js
 require({
 	baseUrl: 'js/'
@@ -75,9 +76,10 @@ function(store, ready) {
 When creating the cart you can define any of the following options in a passed object:
 ```js
 {
-	expires: 1,
+	expires: 1, // Cookie expiration
 	taxMultiplier: 0.06,
 	currency: 'USD',
+	// Related DOM Data
 	productNode: '.product',
 	cartItems: '.cart-products',
 	cartTotal: '.cart-total',
@@ -85,12 +87,14 @@ When creating the cart you can define any of the following options in a passed o
 	priceField: '[name=price]',
 	nameField: '[name=name]',
 	amountField: '[name=quantity]',
+	// Forms that control the server calls
 	addForm: '[name=itemadd]',
 	removeForm: '[name=itemremove]',
 	checkForm: '[name=itemcheck]',
 	clearForm: '[name=clearcart]',
 	totalForm: '[name=totalcart]',
 	checkoutForm: '[name=checkout]',
+	// XHR Action Override; will result in only client side action
 	addAction: true,
 	checkoutAction: true,
 	removeAction: true,
@@ -98,6 +102,7 @@ When creating the cart you can define any of the following options in a passed o
 	totalAction: true,
 	incrementAction: true,
 	decrementAction: true,
+	// Events
 	onCheck: null,
 	onRemove: null,
 	onClear: null,
@@ -135,6 +140,7 @@ var products = [
 	{ id: "product-3430", name: "Product8", quantity: 1, price: 145.00}
 ];
 cart.add(products);
+cart.add(query('.product')); // Assumes 'dojo/query' module
 ```
 Incrementing items appends incremented=amountAdded to the add request.
 ```js
@@ -149,7 +155,7 @@ cart.items;
 ```
 Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart. 
 
-You can query the server to refresh item data with:
+You can query the server to refresh item data with (expects a JSON response to replace the cart item):
 ```js
 cart.check('#product-3423');
 ```
