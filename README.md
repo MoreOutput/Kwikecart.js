@@ -142,7 +142,7 @@ var products = [
 cart.add(products);
 cart.add(query('.product')); // Assumes 'dojo/query' module
 ```
-Incrementing items appends incremented=amountAdded to the add request.
+Incrementing items appends increment=amountAdded to the add request.
 ```js
 cart.add('#product-3423'); // Adding an item more than once will increment
 cart.add('#product-3423', 100); // Passing in an amount

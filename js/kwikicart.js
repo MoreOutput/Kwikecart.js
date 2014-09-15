@@ -1,8 +1,8 @@
 /* Rocky Bevins moreoutput@gmail.com, v0.0.5 */
 define(['dojo/_base/lang', 'dojo/dom', 'dojo/dom-construct', 'dojo/query', 
 	'dojo/_base/array', 'dojo/cookie', 'dojo/dom-class', 'dojo/on', 
-	'dojo/_base/event', 'dojo/request', 'dojo/ready'], 
-function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready) {
+	'dojo/_base/event', 'dojo/request', 'dojo/dom-form', 'dojo/io-query', 'dojo/ready'], 
+function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domForm, ioQuery, ready) {
 	'use strict';	
 	var Cart = function (options) {	
 		this.currentTotal = 0; // This is set when total() is called
@@ -15,7 +15,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			productNode: '.product',
 			cartItems: '.cart-products',
 			cartTotal: '.cart-total',
-			idField: '[name=pid]',
+			idField: '[name=id]',
 			priceField: '[name=price]',
 			nameField: '[name=name]',
 			amountField: '[name=quantity]',
@@ -32,9 +32,9 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			removeAction: true,
 			clearAction: true,
 			totalAction: true,
-			incrementAction: true,
+			incrementAction: true, 
 			decrementAction: true,
-			// Events
+			// Events -- need to define before events
 			onCheck: null,
 			onRemove: null,
 			onClear: null,
@@ -167,17 +167,32 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			}
 
 			arr.forEach(items, function(item, i)  {
-				var node;
 				cart.checkItemDOM(item.id, function (fnd) {
-					var	cartNode = query(cart.options.cartItems);	
+					var	cartNode = query(cart.options.cartItems),
+					increment = cart.options.incrementAction;	
 
 					if (!fnd) {
 						cart.items.push(item);
 						cart.addToDOM(item);
 					} else {
-						node = dom.byId(item.id);
-						cart.increment(item);
-						cart.total();
+						cart.items.forEach(function (item2) {
+							if (typeof cart.options.onIncrement === 'function') {
+	   							increment = cart.options.onIncrement();
+							}					
+							
+							if (item2.id === item.id && increment) {
+								item2.quantity = item2.quantity + amountToAdd;
+
+								query(cart.options.cartItems + ' .' + item.id).query('[name=quantity]')[0].value = item2.quantity;
+
+						      	request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj).then(function(r) {
+									console.log(r);
+								});
+								
+								cookie('nacart', JSON.stringify(cart.items), 
+									{expires: cart.options.expires});
+							}
+						});	
 					}
 				
 					if (cookie('nacart')) {
@@ -194,10 +209,13 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			});
 			
 			if (cart.options.addAction) {
-	      		request.post(query(cart.options.addForm)[0].action, cart.options.xhrObj).then(function(r) {
+				cart.options.xhrObj.data = domForm.toObject(query(cart.options.addForm)[0]);
+	      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj ).then(function(r) {
 					console.log(r);
 				});
 	      	}
+
+	       cart.total();
 		}
 		return cart;
 	};
@@ -214,34 +232,6 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 			return fn(false);
 		}
 	};		
-	
-	// increases the amount property of the item object in the cookie by 1
-	Cart.prototype.increment = function (item, h) {
-		var cart = this,
-		increment = cart.options.incrementAction;
-
-		console.log('Call to incremnent()');
-
-		if (typeof cart.options.onIncrement === 'function') {
-	   		increment = cart.options.onIncrement();
-		}
-
-		cart.items.forEach(function (item2) {
-			if (item2.id === item.id) {
-				item2.quantity = item2.quantity + 1;
-				query(cart.options.cartItems + ' .' + item.id).query('[name=quantity]')[0].value = item2.quantity;
-
-				if (increment) {
-			      	request.post(query(cart.options.addForm)[0].action, cart.options.xhrObj).then(function(r) {
-						console.log(r);
-					});
-				}
-
-				cookie('nacart', JSON.stringify(cart.items), 
-					{expires: cart.options.expires});
-			}
-		});			
-	};
 
 	Cart.prototype.remove = function (items, amountToRemove, callback) {
 		var cart = this,
@@ -280,53 +270,36 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, ready)
 						}
 					});		
 				});
+
+
+				if (cart.options.removeAction === true) {
+					if (!amountToRemove || amountToRemove <= 0) {
+						request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj).then(function(r) {
+							// console.log(r);
+						});
+					} else {
+						request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
+							+ '&decrement=' + amountToRemove, cart.options.xhrObj).then(function(r) {
+							// console.log(r);
+						});
+					}
+			    }
 			} else {
-				// Remove everything in the cart
+				// Clear Action
 				cart.items.forEach(function (item, j) {
 					domC.destroy(query(cart.options.cartItems + ' .' + item.id)[0]);
 				});
 
 				cart.items = [];
 				cookie('nacart', null, {expires: -1});
-			}
 
-			if (cart.options.removeAction === true) {
-				request.post(query(cart.options.removeForm)[0].action, cart.options.xhrObj).then(function(r) {
-					console.log(r);
-				});
-		    }
-		}
-	};
-
-	// decreases the amount property of the item object in the cookie by 1
-	Cart.prototype.decrement = function (item, h) {
-		var cart = this,
-		decrement = cart.options.decrementAction;
-
-		console.log('Call to decrement()');
-
-		if (typeof cart.options.onDecrement === 'function') {
-	   		decrement = cart.options.onDecrement();
-		}
-
-		cart.items.forEach(function (item2) {
-			if (item2.id === item.id) {
-				item2.quantity = item2.quantity + 1;
-
-				if (item2.quantity < 0) {
-					item2.quantity = 0;
-				}
-
-				if (decrement) {
-			      	request.post(query(cart.options.removeForm)[0].action, cart.options.xhrObj).then(function(r) {
-						console.log(r);
+				if (cart.options.removeAction === true) {
+					request.get(query(cart.options.clearForm)[0].action, cart.options.xhrObj).then(function(r) {
+						// console.log(r);
 					});
-				}
-
-				cookie('nacart', JSON.stringify(cart.items), 
-					{expires: cart.options.expires});
+			    }
 			}
-		});			
+		}
 	};
 	
 	Cart.prototype.addToDOM = function (item) {	
