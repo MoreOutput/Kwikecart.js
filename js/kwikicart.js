@@ -11,6 +11,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			expires: 1, // Cookie expiration
 			taxMultiplier: 0.06,
 			currency: 'USD',
+			attachFieldIDs: false,
 			// Related DOM Data
 			productNode: '.product',
 			cartItems: '.cart-products',
@@ -34,7 +35,15 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			totalAction: true,
 			incrementAction: true, 
 			decrementAction: true,
-			// Events -- need to define before events
+			// Events
+			beforeCheck: null,
+			beforeRemove: null,
+			beforeClear: null,
+			beforeCheckout: null,
+			beforeAdd: null,
+			beforeDecrement: null,
+			beforeIncrement: null,
+			beforeTotal: null,
 			onCheck: null,
 			onRemove: null,
 			onClear: null,
@@ -61,7 +70,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 
 		cart.options = lang.mixin(cart.options, options);
 
-		if (typeof cookie('nacart') !== 'undefined') {	
+		if (typeof cookie('nacart') !== 'undefined') {
 			cart.setCartFromCookies(function () {
 				arr.forEach(cart.items, function (item, i) {		
 					cart.setupRemove(item);
@@ -74,12 +83,12 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
  				evt.stopPropagation();
             	evt.preventDefault();
 
-            	cart.add(item, addEvt);
+            	cart.add(item);
 			}),
 			removeEvt = on(query('#' + item.id + ' ' + cart.options.removeForm)[0], 'submit', function(evt) {
  				evt.stopPropagation();
             	evt.preventDefault();
-            	cart.remove(item, removeEvt);
+            	cart.remove(item);
 			});
 		});
 
@@ -111,27 +120,32 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 
 	// Turn non obj item references to item objects based on dom data
 	Cart.prototype.createItemObj = function (itemData) {
-		console.log('Call to createItemObj()');
+		var cart = this;
 		return {
 			id: (function() {
 				if (!itemData.id) {
-					console.log(222)
-					return query(itemData).query('[name=pid]')[0].value;
+					return query(itemData).query(cart.options.idField)[0].value;
 				} else {
 					return itemData.id;
 				}
 			}()),
 			name: (function() {
 				if (!itemData.name) {
-					return query(itemData).query('[name=name]')[0].value;
+					return query(itemData).query(cart.options.nameField)[0].value;
 				} else {
 					return itemData.name;
 				}
 			}()),
-			quantity: 1,
+			quantity: (function() {
+				if (!itemData.quantity) {
+					return 1;
+				} else {
+					return itemData.quantity;
+				}
+			}()),
 			price: (function() {
 				if (!itemData.price) {
-					return parseFloat(query(itemData).query('[name=price]')[0].value);
+					return parseFloat(query(itemData).query(cart.options.priceField)[0].value);
 				} else {
 					return parseFloat(itemData.price);
 				}
@@ -140,12 +154,19 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 	};
 	
 	// Adds item to cart
-	Cart.prototype.add = function (items, amountToAdd, callback) {		
+	Cart.prototype.add = function (items, quantity, callback) {		
 		var cart = this,
 		i = 0,
 		add = true;
 
 		console.log('Call to add()');
+
+		if (!quantity || quantity <= 0) {
+			quantity = -1;
+		} else if (typeof quantity === 'function') {
+			callback = quantity;
+			quantity = -1;
+		} 
 
 		if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
 			items = [cart.createItemObj(items)];
@@ -155,23 +176,22 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			});
 		}
 
-		if (typeof cart.options.onAdd === 'function') {
-	   		add = cart.options.onAdd();
+		if (typeof cart.options.beforeAdd === 'function') {
+	   		add = cart.options.beforeAdd(items, quantity);
 		}
-		
-		if (add === true) {
-			if (items.length === 1 && !isNaN(amountToAdd) && amountToAdd > 0) {
-				for (i; i < amountToAdd - 1; i += 1) {
-					items.push(items[0]);
-				}
-			}
 
+		if (add === true) {
 			arr.forEach(items, function(item, i)  {
 				cart.checkItemDOM(item.id, function (fnd) {
-					var	cartNode = query(cart.options.cartItems),
-					increment = cart.options.incrementAction;	
+					var	increment = cart.options.incrementAction;	
 
 					if (!fnd) {
+						if (quantity && quantity > 1) {
+							item.quantity = quantity;
+						}
+
+						quantity = item.quantity;
+						
 						cart.items.push(item);
 						cart.addToDOM(item);
 					} else {
@@ -181,19 +201,27 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 							}					
 							
 							if (item2.id === item.id && increment) {
-								item2.quantity = item2.quantity + amountToAdd;
-
-								query(cart.options.cartItems + ' .' + item.id).query('[name=quantity]')[0].value = item2.quantity;
-
-						      	request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj).then(function(r) {
-									console.log(r);
-								});
-								
-								cookie('nacart', JSON.stringify(cart.items), 
-									{expires: cart.options.expires});
+								if (quantity === -1) {
+									item2.quantity = item2.quantity + item.quantity;
+									quantity = item2.quantity;
+								} else {
+									item2.quantity = quantity;
+								}
 							}
 						});	
 					}
+
+					if (cart.options.addAction) {
+						cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
+			      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) + '&quantity=' + quantity, cart.options.xhrObj ).then(function(r) {
+			      			if (typeof cart.options.onAdd === 'function') {
+	   							cart.options.onAdd(r);
+							}
+							cart.total();
+						});
+			      	} else {
+			      		cart.total();
+			      	}
 				
 					if (cookie('nacart')) {
 						cookie('nacart', null, {expires: -1});
@@ -201,22 +229,10 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 
 					cookie('nacart', JSON.stringify(cart.items), 
 						{expires: cart.options.expires});
-
-					if (domClass.contains(cartNode, 'hidden')) {
-						domClass.toggle(cartNode, 'hidden');
-					}
 				});
 			});
-			
-			if (cart.options.addAction) {
-				cart.options.xhrObj.data = domForm.toObject(query(cart.options.addForm)[0]);
-	      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj ).then(function(r) {
-					console.log(r);
-				});
-	      	}
-
-	       cart.total();
 		}
+
 		return cart;
 	};
 
@@ -312,17 +328,9 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			domC.create('li', {
 			className: item.id,
 			innerHTML: '<div class="title">' + item.name + '</div>' +  
-				'<input type="hidden" name="name" value="' + item.name + '" />' + 
-				'<input type="hidden" name="pid" value="' + item.id + '" />' + 
-				'<input name="amount" type="hidden" value="' + item.price + '" />' + 
-				'<input id="' + item.id + 
-				'_quantity" type="text" name="quantity" value="' + item.quantity + '" /><div class="price">' + 
-				item.price + '</div>' + 
-				'<input name="price" type="hidden" value="' + item.price 
-				+ '" />' + '<a id="' + item.id + '_remove" href="">Remove</a>'}, 
+				'<a id="' + item.id + '_remove" href="">Remove</a>'}, 
 				query(this.options.cartItems)[0], 'end');		
 			
-			this.total();
 			this.setupRemove(item);
 		}			
 	};
@@ -333,7 +341,6 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 		h = on(dom.byId(item.id + '_remove'), 'click', function(e) {
 			e.preventDefault();
 			cart.remove(item, h);
-			cart.total();
 		});					
 
 		console.log('Call to setupRemove()');

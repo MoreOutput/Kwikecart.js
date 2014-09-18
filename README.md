@@ -14,7 +14,7 @@ Kwikicart makes some markup assumptions:
 	Cart / Buggy markup:
 		* A form for the clear action
 		* A form for the total action
-		* A form for the checkout action 
+		* A form for the checkout action
 
 Lets assume a product on the page is marked up like the following:
 
@@ -30,6 +30,7 @@ Lets assume a product on the page is marked up like the following:
 		</div>
 	</div>
 	<!-- Our Actions that Kwikicart.js will call on each related call -->
+	<!-- Kwikicart will only send the unique id to the server; other form data is for client side use only -->
 	<form method="post" action="./add" name="itemadd">
 		<div class="itemFields">
 			<input type="hidden" name="name" value="Worlds Best Item" />
@@ -45,16 +46,12 @@ Lets assume a product on the page is marked up like the following:
 		<input type="hidden" name="price" value="45.00" />
 		<button type="submit" name="removecart">Remove</button>
 	</form>
-
-	<form method="get" action="./check" name="itemcheckform">
-		<input type="hidden" name="pid" value="3423" />
-	</form>
 </li>
 
 
 <!-- You can also outline the forms in a more genreral way -->
 <!-- If forms are appended like this then the fields in the forms 
-add / remove events are sent, any fields nested here are also appended -->
+add event are sent, any fields nested here are also appended -->
 <form method="get" action="./check" name="itemcheck"></form>
 
 ```
@@ -83,7 +80,7 @@ When creating the cart you can define any of the following options in a passed o
 	productNode: '.product',
 	cartItems: '.cart-products',
 	cartTotal: '.cart-total',
-	idField: '[name=pid]',
+	idField: '[name=id]',
 	priceField: '[name=price]',
 	nameField: '[name=name]',
 	amountField: '[name=quantity]',
@@ -94,15 +91,23 @@ When creating the cart you can define any of the following options in a passed o
 	clearForm: '[name=clearcart]',
 	totalForm: '[name=totalcart]',
 	checkoutForm: '[name=checkout]',
-	// XHR Action Override; will result in only client side action
+	// XHR Action Override; will result in client side action being taken only
 	addAction: true,
 	checkoutAction: true,
 	removeAction: true,
 	clearAction: true,
 	totalAction: true,
-	incrementAction: true,
+	incrementAction: true, 
 	decrementAction: true,
 	// Events
+	beforeCheck: null,
+	beforeRemove: null,
+	beforeClear: null,
+	beforeCheckout: null,
+	beforeAdd: null,
+	beforeDecrement: null,
+	beforeIncrement: null,
+	beforeTotal: null,
 	onCheck: null,
 	onRemove: null,
 	onClear: null,
@@ -114,6 +119,8 @@ When creating the cart you can define any of the following options in a passed o
 	xhrObj: {handleAs: 'json'}
 }
 ```
+
+After you initalize the plugin you should be good to go. 
 
 ## Adding ##
 
@@ -133,7 +140,7 @@ Single Item:
 ```js
 cart.add({ id: "product-3429", name: "Product7", quantity: 1, price: 325.00});
 ```
-Array of items: 
+Array of items:
 ```js
 var products = [
 	{ id: "product-3423", name: "Product1", quantity: 1, price: 45.00},
@@ -142,12 +149,20 @@ var products = [
 cart.add(products);
 cart.add(query('.product')); // Assumes 'dojo/query' module
 ```
-Incrementing items appends increment=amountAdded to the add request.
+
+Incrementing items appends increment=amountAdded to the add request (along with providing a total through the quantity field).
 ```js
-cart.add('#product-3423'); // Adding an item more than once will increment
-cart.add('#product-3423', 100); // Passing in an amount
+// Adding an item more than once will increment
+cart.add('#product-3423'); 
+cart.add('#product-3423'); 
 ```
-## Item Access and Checking Server Data##
+
+You can set the quantity by giving the wanted total.
+```js
+cart.add('#product-3423', 100); 
+```
+
+## Access Client Cart Data ##
 
 Accessing items:
 ```js
@@ -155,10 +170,18 @@ cart.items;
 ```
 Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart. 
 
-You can query the server to refresh item data with (expects a JSON response to replace the cart item):
+## Check / Refresh Item Data ##
+You can query the server to refresh item data with check().
+
+For single item updates, pass in the id. The server should send back some JSON.
 ```js
 cart.check('#product-3423');
 ```
+Calling check() without a passed in ID will send the entire client cart to the server.
+```js
+cart.check();
+```
+
 ## Item Removal ##
 
 Removing items is much the same as adding:
@@ -183,6 +206,12 @@ cart.remove(false);
 Decrement the item by two with:
 cart.remove('product-3423', 2); 
 ```
+
+Decrementing items appends decrement=amountRemoved to the add request.
+```js
+cart.remove('product-3423', 2); 
+```
+
 ## Getting Totals ##
 
 Getting totals:

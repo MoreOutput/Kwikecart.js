@@ -18,23 +18,22 @@ cartTemplate = {
 },
 cart = cartTemplate,
 store = [
-  { id: '3423', name: 'Product1', quantity: 1, price: 45.00},
-  { id: '3424', name: 'Product2', quantity: 1, price: 15.00},
-  { id: '3425', name: 'Product3', quantity: 1, price: 25.00},
-  { id: '3426', name: 'Product4', quantity: 1, price: 55.25},
-  { id: '3427', name: 'Product5', quantity: 1, price: 145.00},
-  { id: '3428', name: 'Product6', quantity: 1, price: 425.00},
-  { id: '3429', name: 'Product7', quantity: 1, price: 325.00},
-  { id: '1423', name: 'Product8', quantity: 1, price: 145.00}
+  { id: '3423', name: 'Product Server Name 1', quantity: 1, price: 45.00},
+  { id: '1423', name: 'Product Server Name 2', quantity: 1, price: 15.00}
 ],
-addToCart = function(cartIndex, storeItem) {
+addToCart = function(cartIndex, quantity, storeItem) {
   if (cartIndex !== false) {
-   cart.items[cartIndex].quantity += 1;
+    if (!quantity) { 
+      cart.items[cartIndex].quantity += 1;
+    } else {
+      cart.items[cartIndex].quantity = quantity;
+    }
   } else {
+    storeItem.quantity = quantity;
     cart.items.push(storeItem);
   }
 
-  return cart.items;
+  return storeItem;
 },
 isInCart = function(id) {
   var i = 0;
@@ -68,31 +67,33 @@ app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 app.use('/js', express.static(__dirname + '/js'));
 
-app.get('/', function(req, res){
+app.get('/', function(req, res) {
  return res.render('index.html');
 });
 
 app.post('/add', function(req, res) {
-  return res.json(addToCart(isInCart(req.param('id')), getStoreItem(req.param('id')) ));
+  return res.json(addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id')) ));
 });
 
-app.post('/remove', function(req, res){
+app.post('/remove', function(req, res) {
+    console.log('Removing');
   return res.json(removeFromCart(isInCart(req.param('id')), req.param('quantity') ));
 });
 
-app.post('/check', function(req, res){
- return res.json(getStoreItem(req.param('id')));
+app.post('/check', function(req, res) {
+  console.log('Check');
+  return res.json(getStoreItem(req.param('id')));
 });
 
-app.get('/clear', function(req, res){
+app.get('/clear', function(req, res) {
+  console.log('Clear');
   cart = cartTemplate;
 
   return res.json({success: true});
 });
 
-app.get('/total', function(req, res){
-  cart = cartTemplate;
-
+app.get('/total', function(req, res) {
+  console.log('Total');
   return res.json({success: true});
 });
 
