@@ -1,6 +1,6 @@
 Kwikicart.js 0.0.1
 ===========================
-Kwikicart is a weird javascript shopping cart. Intending to be a quick solution for connecting the browser 'store' to end points on your server. Store creation should be easy and not dependent on Javascript to work. The best way to illustrate is by jumping in.
+Kwikicart is a weird javascript shopping cart. Intending to be a quick solution for connecting the browser 'store' to end points on your server. Store creation should be easy and progressive enhancement is mandated.
 
 Kwikicart makes some markup assumptions:
 
@@ -11,7 +11,7 @@ Kwikicart makes some markup assumptions:
 		* A form for the remove action
 		* A form for the check item action
 
-	Cart / Buggy markup:
+	Cart markup:
 		* A form for the clear action
 		* A form for the total action
 		* A form for the checkout action
@@ -30,7 +30,7 @@ Lets assume a product on the page is marked up like the following:
 		</div>
 	</div>
 	<!-- Our Actions that Kwikicart.js will call on each related call -->
-	<!-- Kwikicart will only send the unique id to the server; other form data is for client side use only -->
+	<!-- Kwikicart will only send the unique id and quantity to the server -->
 	<form method="post" action="./add" name="itemadd">
 		<div class="itemFields">
 			<input type="hidden" name="name" value="Worlds Best Item" />
@@ -202,9 +202,6 @@ cart.remove();
 Removes all but keeps cookie data:
 ```js
 cart.remove(false);
-
-Decrement the item by two with:
-cart.remove('product-3423', 2); 
 ```
 
 Decrementing items appends decrement=amountRemoved to the add request.
