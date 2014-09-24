@@ -68,7 +68,7 @@ app.set('view engine', 'html');
 app.use('/js', express.static(__dirname + '/js'));
 
 app.get('/', function(req, res) {
- return res.render('index.html');
+  return res.render('index.html');
 });
 
 app.post('/add', function(req, res) {
@@ -76,24 +76,20 @@ app.post('/add', function(req, res) {
 });
 
 app.post('/remove', function(req, res) {
-    console.log('Removing');
   return res.json(removeFromCart(isInCart(req.param('id')), req.param('quantity') ));
 });
 
 app.post('/check', function(req, res) {
-  console.log('Check');
   return res.json(getStoreItem(req.param('id')));
 });
 
 app.get('/clear', function(req, res) {
-  console.log('Clear');
   cart = cartTemplate;
 
   return res.json({success: true});
 });
 
 app.get('/total', function(req, res) {
-  console.log('Total');
   return res.json({success: true});
 });
 

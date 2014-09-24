@@ -1,8 +1,8 @@
-Kwikicart.js 0.0.1
+Kwikicart.js 0.1.0
 ===========================
-Kwikicart is a weird javascript shopping cart. Intending to be a quick solution for connecting the browser 'store' to end points on your server. Store creation should be easy and progressive enhancement is mandated.
+Need a quick JavaScript Shopping Cart? With Kwikicart progressive enhancement is mandatory and DOM form outlines serve as a client side cart API for easily leveraging already defined workflows. Kwikicart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible.
 
-Kwikicart makes some markup assumptions:
+Kwikicart does make some markup assumptions:
 
 	Product markup:
 		* Each product shares a class (.product by default)
@@ -55,7 +55,6 @@ add event are sent, any fields nested here are also appended -->
 <form method="get" action="./check" name="itemcheck"></form>
 
 ```
-
 ## Loading and Setup for DOJO 1.9+ ##
 ```js
 require({
@@ -120,7 +119,7 @@ When creating the cart you can define any of the following options in a passed o
 }
 ```
 
-After you initalize the plugin you should be good to go. 
+After you initalize the plugin you should be good to go.
 
 ## Adding ##
 
@@ -161,38 +160,17 @@ You can set the quantity by giving the wanted total.
 ```js
 cart.add('#product-3423', 100); 
 ```
-
-## Access Client Cart Data ##
-
-Accessing items:
-```js
-cart.items;
-```
-Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart. 
-
-## Check / Refresh Item Data ##
-You can query the server to refresh item data with check().
-
-For single item updates, pass in the id. The server should send back some JSON.
-```js
-cart.check('#product-3423');
-```
-Calling check() without a passed in ID will send the entire client cart to the server.
-```js
-cart.check();
-```
-
-## Item Removal ##
+## Removing ##
 
 Removing items is much the same as adding:
 
 By ID:
 ```js
-cart.remove('product-3423'); 
+cart.remove('#product-3423'); 
 ```
 Array of items: 
 ```js
-products = ['product-3423', 'product-3430'];
+products = ['#product-3423', '#product-3430'];
 cart.remove(products);
 ```
 Remove all:
@@ -206,7 +184,28 @@ cart.remove(false);
 
 Decrementing items appends decrement=amountRemoved to the add request.
 ```js
-cart.remove('product-3423', 2); 
+cart.remove('#product-3423', 2); 
+```
+
+## Access Client Cart Data ##
+
+Accessing items as array:
+```js
+cart.items;
+```
+
+Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart. 
+
+## Check / Refresh Item Data ##
+You can query the server to refresh item data with check().
+
+For single item updates, pass in the id. The server should send back the item as JSON.
+```js
+cart.check('#product-3423');
+```
+Calling check() without a passed in ID will send the entire client cart to the server.
+```js
+cart.check();
 ```
 
 ## Getting Totals ##
@@ -214,5 +213,5 @@ cart.remove('product-3423', 2);
 Getting totals:
 ```js
 cart.total(); // Totals the cart on the client
-cart.total(true); // Totals the cart, checking items against the server
+cart.total(true); // Totals the cart, checking items against the server which should send back an object with {total: X}
 ```

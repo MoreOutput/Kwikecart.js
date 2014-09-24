@@ -35,7 +35,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			totalAction: true,
 			incrementAction: true, 
 			decrementAction: true,
-			// Events
+			// Before events -- must return true before item is added
 			beforeCheck: null,
 			beforeRemove: null,
 			beforeClear: null,
@@ -44,6 +44,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			beforeDecrement: null,
 			beforeIncrement: null,
 			beforeTotal: null,
+			// On events -- Fire after the item is added and server response received
 			onCheck: null,
 			onRemove: null,
 			onClear: null,
@@ -55,18 +56,11 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			xhrObj: {handleAs: 'json'}
 		};
 
-		console.log('Constructor');
-
 		return this;
 	}
 
 	Cart.prototype.create = function (options) {		
-		var cart = this, 
-		checkoutEvt,
-		clearEvt,
-		totalEvt;
-
-		console.log('Call to create()');
+		var cart = this;
 
 		cart.options = lang.mixin(cart.options, options);
 
@@ -96,10 +90,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 	};
 
 	// Outlines cart items from cookie information
-	Cart.prototype.setCartFromCookies = function (fn) {
+	Cart.prototype.setCartFromCookies = function (callback) {
 		var cart = this;	
-
-		console.log('Call to setCartFromCookies()');
 
 		if (cookie('nacart') !== 'null') {
 			cart.items = JSON.parse(cookie('nacart'));
@@ -115,7 +107,7 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			});				
 		});		
 
-		fn();
+		callback();
 	}; 	
 
 	// Turn non obj item references to item objects based on dom data
@@ -152,14 +144,12 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 			}())
 		};
 	};
-	
+
 	// Adds item to cart
 	Cart.prototype.add = function (items, quantity, callback) {		
 		var cart = this,
 		i = 0,
 		add = true;
-
-		console.log('Call to add()');
 
 		if (!quantity || quantity <= 0) {
 			quantity = -1;
@@ -237,23 +227,19 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 	};
 
 	// Confirm an item is in the DOM
-	Cart.prototype.checkItemDOM = function (id, fn) {
+	Cart.prototype.checkItemDOM = function (id, callback) {
 		var checkNode = query(this.options.cartItems + ' .' + id)[0];
 
-		console.log('Call to checkItemDOM()');
-
 		if (checkNode !== undefined) {
-			return fn(true);
+			return callback(true);
 		} else {
-			return fn(false);
+			return callback(false);
 		}
 	};		
 
 	Cart.prototype.remove = function (items, amountToRemove, callback) {
 		var cart = this,
 		remove = true;
-
-		console.log('Call to remove()');
 
 		if (typeof cart.options.onRemove === 'function') {
 	   		remove = cart.options.onRemove();
@@ -322,8 +308,6 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 		var qNode = query('#' + item.id + '_quantity'),
 		itemTotal = query(this.options.cartItems + ' li').length;	
 
-		console.log('Call to addToDom()');
-	
 		if (qNode.length === 0) {	
 			domC.create('li', {
 			className: item.id,
@@ -340,10 +324,8 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 		var cart = this,
 		h = on(dom.byId(item.id + '_remove'), 'click', function(e) {
 			e.preventDefault();
-			cart.remove(item, h);
+			cart.remove(item);
 		});					
-
-		console.log('Call to setupRemove()');
 	};
 
 	// totals the cart
@@ -359,8 +341,6 @@ function(lang, dom, domC, query, arr, cookie, domClass, on, evt, request, domFor
 		dom.byId('total').value = total;
 		
 		this.cartTotal = total;
-
-		console.log('Call to total()');
 
 		return cart;
 	};
