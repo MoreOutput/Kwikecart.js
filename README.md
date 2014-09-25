@@ -1,6 +1,6 @@
 Kwikicart.js 0.1.0
 ===========================
-Need a quick JavaScript Shopping Cart? With Kwikicart progressive enhancement is mandatory and DOM form outlines serve as a client side cart API for easily leveraging already defined workflows. Kwikicart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible.
+Need a quick JavaScript Shopping Cart? With Kwikicart progressive enhancement is mandatory and DOM form outlines serve as a client side cart API for easily leveraging already defined workflows. Kwikicart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
 
 Kwikicart does make some markup assumptions:
 
@@ -82,7 +82,7 @@ When creating the cart you can define any of the following options in a passed o
 	idField: '[name=id]',
 	priceField: '[name=price]',
 	nameField: '[name=name]',
-	amountField: '[name=quantity]',
+	quantityField: '[name=quantity]',
 	// Forms that control the server calls
 	addForm: '[name=itemadd]',
 	removeForm: '[name=itemremove]',

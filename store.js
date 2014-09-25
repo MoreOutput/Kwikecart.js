@@ -29,11 +29,12 @@ addToCart = function(cartIndex, quantity, storeItem) {
       cart.items[cartIndex].quantity = quantity;
     }
   } else {
-    storeItem.quantity = quantity;
     cart.items.push(storeItem);
+    cartIndex = cart.items.length - 1;
+    cart.items[cartIndex].quantity = quantity;
   }
 
-  return storeItem;
+  return cart.items[cartIndex];
 },
 isInCart = function(id) {
   var i = 0;
@@ -67,30 +68,51 @@ app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 app.use('/js', express.static(__dirname + '/js'));
 
+// Rendering the test page for an example of Kwikicart in action!
 app.get('/', function(req, res) {
   return res.render('index.html');
 });
 
 app.post('/add', function(req, res) {
-  return res.json(addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id')) ));
+  if (req.xhr) {
+    return res.json(addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id'), 0) ));
+  } else {
+    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+  }
 });
 
 app.post('/remove', function(req, res) {
-  return res.json(removeFromCart(isInCart(req.param('id')), req.param('quantity') ));
+  if (req.xhr) {
+    return res.json(removeFromCart(isInCart(req.param('id')), req.param('quantity') ));
+  } else {
+    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+  }
 });
 
 app.post('/check', function(req, res) {
-  return res.json(getStoreItem(req.param('id')));
+  if (req.xhr) {
+    return res.json(getStoreItem(req.param('id')));
+  } else {
+    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+  }
 });
 
 app.get('/clear', function(req, res) {
   cart = cartTemplate;
 
-  return res.json({success: true});
+  if (req.xhr) {
+    return res.json(cart);
+  } else {
+    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+  }
 });
 
 app.get('/total', function(req, res) {
-  return res.json({success: true});
+  if (req.xhr) {
+     return res.json(cart);
+  } else {
+    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+  }
 });
 
 app.listen(1337);
