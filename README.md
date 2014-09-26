@@ -36,6 +36,7 @@ Lets assume a product on the page is marked up like the following:
 			<input type="hidden" name="name" value="Worlds Best Item" />
 			<input type="hidden" name="pid" value="3423" />
 			<input type="hidden" name="price" value="45.00" />
+			<input type="hidden" name="quantity" value="1" />
 		</div>
 		<button type="submit" name="addtocart">Add to Cart</button>
 	</form>
@@ -166,25 +167,27 @@ Removing items is much the same as adding:
 
 By ID:
 ```js
-cart.remove('#product-3423'); 
+cart.remove('#product-3423'); // Fully removes item
 ```
 Array of items: 
 ```js
 products = ['#product-3423', '#product-3430'];
-cart.remove(products);
-```
-Remove all:
-```js
-cart.remove();
-```
-Removes all but keeps cookie data:
-```js
-cart.remove(false);
+cart.remove(products); // Fully removes items
 ```
 
 Decrementing items appends decrement=amountRemoved to the add request.
 ```js
-cart.remove('#product-3423', 2); 
+cart.remove('#product-3423', 2); // Removes 2 items
+```
+
+Use clear to remove all items at once:
+```js
+cart.clear();
+```
+
+Removes all but keeps cookie data:
+```js
+cart.clear(false);
 ```
 
 ## Access Client Cart Data ##
@@ -213,5 +216,5 @@ cart.check();
 Getting totals:
 ```js
 cart.total(); // Totals the cart on the client
-cart.total(true); // Totals the cart, checking items against the server which should send back an object with {total: X}
+cart.total(true); // Total with server call
 ```
