@@ -6,11 +6,11 @@ Kwikicart does make some markup assumptions:
 
 	Product markup:
 		* Each product shares a class (.product by default)
-		* A unique ID is attached to the outlined product node in the form of an ID attribute
-		* A form for the add action which sets the quantity of the item (so it can effectively function as remove)
-		* A form for the check item action
+		* Each product node has an unqiue ID.
+		* A form for the add/remove actions
 
 	Cart markup:
+		* A form for the check item action
 		* A form for the clear action
 		* A form for the total action
 		* A form for the checkout action
