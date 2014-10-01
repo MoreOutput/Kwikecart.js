@@ -39,16 +39,9 @@ Lets assume a product on the page is marked up like the following:
 			<input type="hidden" name="quantity" value="1" />
 		</div>
 		<button type="submit" name="addtocart">Add to Cart</button>
-	</form>
-
-	<form method="post" action="./remove" name="itemremoveform">
-		<input type="hidden" name="name" value="Worlds Best Item" />
-		<input type="hidden" name="pid" value="3423" />
-		<input type="hidden" name="price" value="45.00" />
 		<button type="submit" name="removecart">Remove</button>
 	</form>
 </li>
-
 
 <!-- You can also outline the forms in a more genreral way -->
 <!-- If forms are appended like this then the fields in the forms 
@@ -76,6 +69,7 @@ When creating the cart you can define any of the following options in a passed o
 	expires: 1, // Cookie expiration
 	taxMultiplier: 0.06,
 	currency: 'USD',
+	attachFieldIDs: false,
 	// Related DOM Data
 	productNode: '.product',
 	cartItems: '.cart-products',
@@ -99,7 +93,7 @@ When creating the cart you can define any of the following options in a passed o
 	totalAction: true,
 	incrementAction: true, 
 	decrementAction: true,
-	// Events
+	// Before events -- must return true before an item is added
 	beforeCheck: null,
 	beforeRemove: null,
 	beforeClear: null,
@@ -108,13 +102,14 @@ When creating the cart you can define any of the following options in a passed o
 	beforeDecrement: null,
 	beforeIncrement: null,
 	beforeTotal: null,
+	// On events -- Fire after the item is added and server response received
 	onCheck: null,
 	onRemove: null,
 	onClear: null,
 	onCheckout: null,
 	onAdd: null,
-	onDecrement: null,
-	onIncrement: null,
+	onDecrement: null, // Fired when an items quantity goes down but not to 0
+	onIncrement: null, // Fired when an items quantity goes up but not on 1
 	onTotal: null,
 	xhrObj: {handleAs: 'json'}
 }
@@ -122,9 +117,9 @@ When creating the cart you can define any of the following options in a passed o
 
 After you initalize the plugin you should be good to go.
 
-## Adding ##
+## Add with cart.add(items, quantity, callback) ##
 
-Now we a user clicks the 'Add to Cart' it will submit a post
+When a user clicks the 'Add to Cart' it will submit a post
 request via XHR with the fields outlined within the form. And now
 cart.items has a reference to item.
 
@@ -147,42 +142,49 @@ var products = [
 	{ id: "product-3430", name: "Product8", quantity: 1, price: 145.00}
 ];
 cart.add(products);
-cart.add(query('.product')); // Assumes 'dojo/query' module
+cart.add(query('.product'));
 ```
 
-Incrementing items appends increment=amountAdded to the add request (along with providing a total through the quantity field).
+Incrementing items appends increment=true to the add request (along with providing a total through the quantity field).
 ```js
-// Adding an item more than once will increment
-cart.add('#product-3423'); 
-cart.add('#product-3423'); 
+cart.add('product-3423'); 
+cart.add('product-3423'); 
 ```
 
 You can set the quantity by giving the wanted total.
 ```js
-cart.add('#product-3423', 100); 
+cart.add('product-3423', 100); 
 ```
-## Removing ##
+## Remove with cart.remove(items, quantity, callback) ##
 
-Removing items is much the same as adding:
+Removing items with remove() is the same as adding:
 
 By ID:
 ```js
-cart.remove('#product-3423'); // Fully removes item
+cart.remove('product-3423'); // Fully removes item
 ```
+
 Array of items: 
 ```js
-products = ['#product-3423', '#product-3430'];
+products = ['product-3423', 'product-3430'];
 cart.remove(products); // Fully removes items
 ```
 
-Decrementing items appends decrement=amountRemoved to the add request.
+Decrementing items appends decrement=true to the add request.
 ```js
-cart.remove('#product-3423', 2); // Removes 2 items
+cart.remove('product-3423', 2); // Removes 2 items
+```
+
+Both the remove() and add() functions are actually just referencing set().
+set() will not fire any of the add/remove/increment/decrement events.
+```js
+cart.remove('product-3423', 100);
 ```
 
 Use clear to remove all items at once:
 ```js
 cart.clear();
+cart.remove(); // Calls clear and will fire those events
 ```
 
 Removes all but keeps cookie data:
@@ -190,11 +192,21 @@ Removes all but keeps cookie data:
 cart.clear(false);
 ```
 
-## Access Client Cart Data ##
+## Working with Cart Data ##
 
 Accessing items as array:
 ```js
 cart.items;
+```
+
+Finding item in the cart, null if its not there:
+```js
+cart.find('product-3430');
+```
+
+DOM item to object:
+```js
+cart.createItemObj('product-3430');
 ```
 
 Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart. 
@@ -204,7 +216,7 @@ You can query the server to refresh item data with check().
 
 For single item updates, pass in the id. The server should send back the item as JSON.
 ```js
-cart.check('#product-3423');
+cart.check('product-3423');
 ```
 Calling check() without a passed in ID will send the entire client cart to the server.
 ```js
@@ -218,3 +230,7 @@ Getting totals:
 cart.total(); // Totals the cart on the client
 cart.total(true); // Total with server call
 ```
+
+## Disable Cookies ##
+
+Disable cookies by setting the expires option to -1

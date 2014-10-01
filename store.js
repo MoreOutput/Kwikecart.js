@@ -77,7 +77,8 @@ app.post('/add', function(req, res) {
   if (req.xhr) {
     return res.json(addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id'), 0) ));
   } else {
-    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id'), 0) )
+    return res.render('add.html?' + req.originalUrl.replace(/.*[?]/, ''));
   }
 });
 
@@ -85,7 +86,7 @@ app.post('/remove', function(req, res) {
   if (req.xhr) {
     return res.json(removeFromCart(isInCart(req.param('id')), req.param('quantity') ));
   } else {
-    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    return res.render('remove.html?' + req.originalUrl.replace(/.*[?]/, ''));
   }
 });
 
@@ -97,7 +98,7 @@ app.post('/check', function(req, res) {
   }
 });
 
-app.get('/clear', function(req, res) {
+app.post('/clear', function(req, res) {
   cart = cartTemplate;
 
   if (req.xhr) {

@@ -113,23 +113,31 @@
 					// Setting up the store, and creating a cart for the user
 					cart = store.create({
 						expires: 1,
+						productNode: '.product',
+						beforeAdd: function(items, quantity) {
+							return true;
+						},
 						onAdd: function(item, r) {
 							if (item) {
-								console.log(item);
+								console.log(cart.items);
 							}
+						},
+						beforeRemove: function(items, quantity) {
+							return true;
+						},
+						onRemove: function(item, r) {
+							console.log(cart.items);
 						}
 					});
 					
-					cart.remove();
+					cart.clear();
 
 					// Adding techniques
-		
-					cart.add({
-						id: '3423', 
-						name: 'Product1', 
-						quantity: 10, 
-						price: 45.00
+					
+					cart.add('3423', 10, function() {
+						cart.remove('3423');
 					});
+				
 
 
 					// Removing, in .product expected form name: itemremove

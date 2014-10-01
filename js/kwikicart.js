@@ -48,8 +48,8 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			onClear: null,
 			onCheckout: null,
 			onAdd: null,
-			onDecrement: null,
-			onIncrement: null,
+			onDecrement: null, // Fired when an items quantity goes down but not to 0
+			onIncrement: null, // Fired when an items quantity goes up but not on 1
 			onTotal: null,
 			xhrObj: {handleAs: 'json'}
 		};
@@ -101,41 +101,72 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 	// Turn non obj item references to item objects based on dom data
 	Cart.prototype.createItemObj = function (itemData) {
 		var cart = this;
+
+		if (typeof itemData === 'string') {
+			itemData = query('#' + itemData);
+		} else if (itemData.length === undefined) {
+			itemData = query('#' + itemData.id);
+		}
+
 		return {
-			id: (function() {
-				if (!itemData.id) {
-					return query(itemData).query(cart.options.idField)[0].value;
-				} else {
-					return itemData.id;
-				}
-			}()),
-			name: (function() {
-				if (!itemData.name) {
-					return query(itemData).query(cart.options.nameField)[0].value;
-				} else {
-					return itemData.name;
-				}
-			}()),
-			quantity: (function() {
-				if (!itemData.quantity) {
-					return 1;
-				} else {
-					return itemData.quantity;
-				}
-			}()),
-			price: (function() {
-				if (!itemData.price) {
-					return parseFloat(query(itemData).query(cart.options.priceField)[0].value);
-				} else {
-					return parseFloat(itemData.price);
-				}
-			}())
+			id: itemData.query(cart.options.idField)[0].value,
+			name: itemData.query(cart.options.nameField)[0].value,
+			quantity: parseInt(itemData.query(cart.options.quantityField)[0].value),
+			price: parseFloat(itemData.query(cart.options.priceField)[0].value)
 		};
 	};
 
+	Cart.prototype.set = function(items, quantity, callback) {
+		var cart = this,
+		i = 0;
+
+		if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
+			items = [cart.createItemObj(items)];
+		} else {
+			arr.forEach(items, function(item, i) {
+				items[i] = cart.createItemObj(item);
+			});
+		}
+		
+		arr.forEach(items, function(item, i)  {
+			cart.find(item.id, function (fndItem, fndIndex) {
+				if (fndItem === null) {
+					if (quantity && quantity > 1) {
+						item.quantity = quantity;
+					}
+
+					cart.items.push(item);
+				} else {
+					item = fndItem;
+					
+					if (quantity === -1) {
+						item.quantity = 0;
+					} else {
+						item.quantity = parseInt(item.quantity) + quantity;
+					}
+					
+				}
+
+				if (item.quantity <= 0) {
+					cart.items.splice(fndIndex, 1);
+				}
+
+				callback(item, true);
+			
+				if (cookie('nacart')) {
+					cookie('nacart', null, {expires: -1});
+				}			
+
+				cookie('nacart', JSON.stringify(cart.items), 
+					{expires: cart.options.expires});
+			});
+		});
+
+		return cart;
+	}	
+
 	Cart.prototype.add = function (items, quantity, callback) {		
 		var cart = this,
-		i = 0,
 		add = true;
 
 		if (typeof cart.options.beforeAdd === 'function') {
@@ -143,62 +174,104 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 
 		if (add === true) {
-			if (!quantity || quantity <= 0) {
-				quantity = -1;
+			if (items.quantity >= 0) {
+				quantity = items.quantity;
 			} else if (typeof quantity === 'function') {
 				callback = quantity;
 				quantity = -1;
-			} 
-
-			if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
-				items = [cart.createItemObj(items)];
-			} else {
-				arr.forEach(items, function(item, i) {
-					items[i] = cart.createItemObj(item);
-				});
+			} else if (!quantity || quantity <= 0) {
+				quantity = -1;
 			}
-			
-			arr.forEach(items, function(item, i)  {
-				cart.isInCart(item.id, function (fnd) {
-					var	increment = cart.options.incrementAction;	
 
-					if (!fnd) {
-						if (quantity && quantity > 1) {
-							item.quantity = quantity;
-						} else if (quantity === -1) {
-							quantity = item.quantity;
+			cart.set(items, quantity, function(item, increment) {
+				if (cart.options.addAction) {
+					cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
+
+		      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
+		      			+ '&quantity=' + item.quantity + '&increment=' + increment, cart.options.xhrObj).then(function(r) {
+		      			if (typeof cart.options.onAdd === 'function') {
+							if (typeof callback !== 'function') {
+   								cart.options.onAdd(item, r);
+   							} else {
+   								cart.options.onAdd(item, r);
+   								callback(item, r);
+   							}
 						}
-
-						cart.items.push(item);
-					} else {
-						cart.items.forEach(function (item2) {
-							if (typeof cart.options.onIncrement === 'function') {
-	   							increment = cart.options.onIncrement();
-							}					
-							
-							if (item2.id === item.id && increment) {
-								item = item2;
-								if (quantity === -1) {
-									quantity = 1;
-									item.quantity = item.quantity + quantity;
-								} else {
-									item.quantity = quantity;
-								}
-							}
-						});	
+						cart.total();
+					});
+		      	} else {
+		      		cart.total();
+		      		
+		      		if (typeof callback === 'function') {
+						callback(item, r);
 					}
+		      	}
+			});
+		}
 
-					query('#' + item.id).query(cart.options.quantityField)[0].value = quantity;
+		return cart;
+	};
 
-					if (cart.options.addAction) {
-						cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
+	Cart.prototype.find = function (id, callback) {
+		var cart = this;
 
-			      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
-			      			+ '&quantity=' + item.quantity + '&increment=' + quantity, cart.options.xhrObj ).then(function(r) {
-			      			if (typeof cart.options.onAdd === 'function') {
+		if (cart.items.length !== 0) {
+			arr.forEach(cart.items, function (item, i) {
+				if (id === item.id) {
+					if (typeof callback === 'function') {
+						return callback(item, i);
+					} else {
+						return item;
+					}
+				}
+
+				if (i === cart.items.length - 1) {
+					if (typeof callback === 'function') {
+						return callback(null);
+					} else {
+						return null;
+					}
+				}
+			});	
+		} else {
+			if (typeof callback === 'function') {
+				return callback(null);
+			} else {
+				return null;
+			}
+		}
+	};		
+
+	Cart.prototype.remove = function (items, quantity, callback) {
+		var cart = this,
+		remove = true;
+
+		if (arguments.length > 0) {
+			if (typeof cart.options.beforeRemove === 'function') {
+		   		remove = cart.options.beforeRemove(items, quantity);
+			}
+
+			if (remove === true) {
+				if (quantity > 0) {
+					quantity = -Math.abs(quantity);
+				} else if (typeof quantity === 'function') {
+					callback = quantity;
+					quantity = -1;
+				} else if (!quantity) {
+					quantity = -1;
+				}
+
+				cart.set(items, quantity, function(item, decrement) {
+					if (cart.options.removeAction) {
+						cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.removeForm)[0]);
+
+			      		request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
+			      			+ '&quantity=' + item.quantity + '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
+			      			if (typeof cart.options.onRemove === 'function') {
 								if (typeof callback !== 'function') {
-	   								cart.options.onAdd(item, r);
+	   								cart.options.onRemove(item, r);
 	   							} else {
+	   								cart.options.onRemove(item, r);
 	   								callback(item, r);
 	   							}
 							}
@@ -211,97 +284,10 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 							callback(item, r);
 						}
 			      	}
-				
-					if (cookie('nacart')) {
-						cookie('nacart', null, {expires: -1});
-					}			
-
-					cookie('nacart', JSON.stringify(cart.items), 
-						{expires: cart.options.expires});
-				});
-			});
-		}
-
-		return cart;
-	};
-
-	Cart.prototype.isInCart = function (id, callback) {
-		var cart = this;
-
-		if (cart.items.length !== 0) {
-			arr.forEach(cart.items, function (item, i) {
-				if (id === item.id) {
-					return callback(true, item);
-				}
-
-				if (i === cart.items.length - 1) {
-					return callback(false, null);
-				}
-			});	
-		} else {
-			return callback(false, null);
-		}
-	};		
-
-	Cart.prototype.remove = function (items, quantity, callback) {
-		var cart = this,
-		remove = true;
-
-		if (typeof cart.options.beforeRemove === 'function') {
-	   		remove = cart.options.beforeRemove(items, quantity);
-		}
-
-		if (remove === true) {
-			if (!quantity || quantity <= 0) {
-				quantity = -1;
-			} else if (typeof quantity === 'function') {
-				callback = quantity;
-				quantity = -1;
-			} 
-
-			if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
-				items = [cart.createItemObj(items)];
-			} else {
-				arr.forEach(items, function(item, i) {
-					items[i] = cart.createItemObj(item);
 				});
 			}
-
-			arr.forEach(items, function(item, i)  {
-				arr.forEach(cart.items, function (item2, j) {
-					if (item2.id === item.id) {
-						cart.items.splice(j, 1);	
-
-						if (cart.items.length > 0) {
-							cookie('nacart', JSON.stringify(cart.items), 
-								{expires: cart.options.expires});
-						} else {
-							cookie('nacart', null, {expires: -1});
-						}
-						
-						query('#' + item.id).query(cart.options.quantityField)[0].value = quantity;
-					}
-				});				
-			});
-
-			if (cart.options.removeAction === true) {
-				request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj).then(function(r) {
-					if (typeof cart.options.onRemove === 'function') {
-						if (typeof callback !== 'function') {
-							cart.options.onRemove(item, r);
-						} else {
-							callback(item, r);
-						}
-					}
-					cart.total();
-				});
-		    } else {
-		    	cart.total();
-		    	
-		    	if (typeof callback === 'function') {
-					callback(item, r);
-				}
-		    }
+		} else {
+			cart.clear();
 		}
 
 		return cart;
@@ -311,7 +297,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		var cart = this,
 		clear = true;
 
-
 		if (typeof cart.options.beforeClear === 'function') {
 	   		clear = cart.options.beforeClear(items, quantity);
 		}
@@ -319,14 +304,14 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		if (clear === true) {
 			cart.currentTotal = 0;
 
-			arr.forEach(items, function(item, i)  {
+			arr.forEach(cart.items, function(item, i)  {
 				query('#' + item.id).query(cart.options.quantityField)[0].value = 1;
 			});	
 
 			cart.items = [];
 
 			if (cart.options.clearAction === true) {
-				request.post(query(cart.options.clearForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data), cart.options.xhrObj).then(function(r) {
+				request.post(query(cart.options.clearForm)[0].action, cart.options.xhrObj).then(function(r) {
 					if (typeof cart.options.onClear === 'function') {
 						if (typeof callback !== 'function') {
 								cart.options.onClear(item, r);
