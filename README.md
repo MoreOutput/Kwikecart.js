@@ -7,8 +7,7 @@ Kwikicart does make some markup assumptions:
 	Product markup:
 		* Each product shares a class (.product by default)
 		* A unique ID is attached to the outlined product node in the form of an ID attribute
-		* A form for the add action
-		* A form for the remove action
+		* A form for the add action which sets the quantity of the item (so it can effectively function as remove)
 		* A form for the check item action
 
 	Cart markup:
@@ -178,7 +177,7 @@ cart.remove('product-3423', 2); // Removes 2 items
 Both the remove() and add() functions are actually just referencing set().
 set() will not fire any of the add/remove/increment/decrement events.
 ```js
-cart.remove('product-3423', 100);
+cart.set('product-3423', 100);
 ```
 
 Use clear to remove all items at once:
