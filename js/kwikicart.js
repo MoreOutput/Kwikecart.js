@@ -31,16 +31,12 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			removeAction: true,
 			clearAction: true,
 			totalAction: true,
-			incrementAction: true, 
-			decrementAction: true,
 			// Before events -- must return true before an item is added
 			beforeCheck: null,
 			beforeRemove: null,
 			beforeClear: null,
 			beforeCheckout: null,
 			beforeAdd: null,
-			beforeDecrement: null,
-			beforeIncrement: null,
 			beforeTotal: null,
 			// On events -- Fire after the item is added and server response received
 			onCheck: null,

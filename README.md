@@ -7,13 +7,13 @@ Kwikicart does make some markup assumptions:
 	Product markup:
 		* Each product shares a class (.product by default)
 		* Each product node has an unqiue ID.
-		* A form for the add/remove actions
+		* A form for the add/remove actions (mandatory)
 
-	Cart markup:
-		* A form for the check item action
-		* A form for the clear action
-		* A form for the total action
-		* A form for the checkout action
+	Page markup:
+		* A form for the check item action (can be set via config)
+		* A form for the clear action (can be set via config)
+		* A form for the total action (can be set via config)
+		* A form for the checkout action (mandatory)
 
 Lets assume a product on the page is marked up like the following:
 
@@ -90,16 +90,12 @@ When creating the cart you can define any of the following options in a passed o
 	removeAction: true,
 	clearAction: true,
 	totalAction: true,
-	incrementAction: true, 
-	decrementAction: true,
 	// Before events -- must return true before an item is added
 	beforeCheck: null,
 	beforeRemove: null,
 	beforeClear: null,
 	beforeCheckout: null,
 	beforeAdd: null,
-	beforeDecrement: null,
-	beforeIncrement: null,
 	beforeTotal: null,
 	// On events -- Fire after the item is added and server response received
 	onCheck: null,
@@ -233,3 +229,37 @@ cart.total(true); // Total with server call
 ## Disable Cookies ##
 
 Disable cookies by setting the expires option to -1
+
+## Events ##
+
+Before events are fired, obviously, before the action begins to process. Before events
+must return true or the action will be halted. On events are fired at the end of action processing. 
+
+```js
+beforeCheck: null, 
+beforeRemove: null, 
+beforeClear: null, 
+beforeCheckout: null, 
+beforeAdd: null,
+beforeTotal: null,
+
+onCheck: null,
+onRemove: null,
+onClear: null,
+onCheckout: null,
+onAdd: null,
+onDecrement: null, // Fired when an items quantity goes down but not to 0
+onIncrement: null, // Fired when an items quantity goes up but not on 1
+onTotal: null
+```
+
+## Preventing calls to the server ##
+
+To prevent a call to the server toggle the following cart options:
+```js
+addAction: true,
+checkoutAction: true,
+removeAction: true,
+clearAction: true,
+totalAction: true,
+```
