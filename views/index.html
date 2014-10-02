@@ -119,27 +119,24 @@
 						},
 						onAdd: function(item, r) {
 							if (item) {
-								console.log(cart.items);
+						//		console.log(cart.items);
 							}
 						},
 						beforeRemove: function(items, quantity) {
 							return true;
 						},
 						onRemove: function(item, r) {
-							console.log(cart.items);
+							console.log(cart.items.length);
 						}
 					});
 					
 					cart.clear();
 
 					// Adding techniques
-					
-					cart.add('3423', 10, function() {
-						cart.remove('3423');
-					});
+					//cart.add('3423', 10);
+
+					//cart.check('3423');
 				
-
-
 					// Removing, in .product expected form name: itemremove
 					//cart.remove('product-3423'); // Fully removes product
 					//cart.remove(products); // Fully removes product set

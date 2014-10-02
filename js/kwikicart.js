@@ -3,14 +3,14 @@ define(['dojo/_base/lang', 'dojo/query','dojo/_base/array', 'dojo/cookie', 'dojo
 function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 	'use strict';	
 	var Cart = function (options) {	
-		this.currentTotal = 0; // This is set when total() is called
+		this.currentTotal = 0; 
 		this.items = [];
 		this.options = {
 			expires: 1, // Cookie expiration
 			taxMultiplier: 0.06,
 			currency: 'USD',
 			attachFieldIDs: false,
-			// Related DOM Data
+			// Names of related DOM Data
 			productNode: '.product',
 			cartItems: '.cart-products',
 			cartTotal: '.cart-total',
@@ -72,6 +72,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			removeEvt = on(query('#' + item.id + ' ' + cart.options.removeForm)[0], 'submit', function(evt) {
  				evt.stopPropagation();
             	evt.preventDefault();
+
             	cart.remove(item);
 			});
 		});
@@ -95,8 +96,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 	}; 	
 
 	// Turn non obj item references to item objects based on dom data
-	Cart.prototype.createItemObj = function (itemData) {
-		var cart = this;
+	Cart.prototype.createItemObj = function (itemData, callback) {
+		var cart = this,
+		itemObj;
 
 		if (typeof itemData === 'string') {
 			itemData = query('#' + itemData);
@@ -104,12 +106,18 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			itemData = query('#' + itemData.id);
 		}
 
-		return {
+		itemObj = {
 			id: itemData.query(cart.options.idField)[0].value,
 			name: itemData.query(cart.options.nameField)[0].value,
 			quantity: parseInt(itemData.query(cart.options.quantityField)[0].value),
 			price: parseFloat(itemData.query(cart.options.priceField)[0].value)
 		};
+
+		if (typeof callback !== 'function') {
+			return itemObj;
+		} else {
+			return callback(itemObj);
+		}
 	};
 
 	Cart.prototype.set = function(items, quantity, callback) {
@@ -126,21 +134,22 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		
 		arr.forEach(items, function(item, i)  {
 			cart.find(item.id, function (fndItem, fndIndex) {
-				if (fndItem === null) {
+				if (fndItem === null && quantity > 0) {
 					if (quantity && quantity > 1) {
 						item.quantity = quantity;
 					}
 
 					cart.items.push(item);
-				} else {
+				} else if (fndItem !== null) {
 					item = fndItem;
 					
 					if (quantity === -1) {
+						item.quantity += 1;
+					} else if (quantity === -2) {
 						item.quantity = 0;
 					} else {
-						item.quantity = parseInt(item.quantity) + quantity;
+						item.quantity += quantity;
 					}
-					
 				}
 
 				if (item.quantity <= 0) {
@@ -164,7 +173,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 	Cart.prototype.add = function (items, quantity, callback) {		
 		var cart = this,
 		add = true;
-
+   				
 		if (typeof cart.options.beforeAdd === 'function') {
 	   		add = cart.options.beforeAdd(items, quantity);
 		}
@@ -182,9 +191,8 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			cart.set(items, quantity, function(item, increment) {
 				if (cart.options.addAction) {
 					cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
-
 		      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
-		      			+ '&quantity=' + item.quantity + '&increment=' + increment, cart.options.xhrObj).then(function(r) {
+		      			+ '&increment=' + increment, cart.options.xhrObj).then(function(r) {
 		      			if (typeof cart.options.onAdd === 'function') {
 							if (typeof callback !== 'function') {
    								cart.options.onAdd(item, r);
@@ -199,7 +207,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		      		cart.total();
 		      		
 		      		if (typeof callback === 'function') {
-						callback(item, r);
+						callback(item);
 					}
 		      	}
 			});
@@ -210,7 +218,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 	Cart.prototype.find = function (id, callback) {
 		var cart = this;
-
 		if (cart.items.length !== 0) {
 			arr.forEach(cart.items, function (item, i) {
 				if (id === item.id) {
@@ -218,14 +225,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 						return callback(item, i);
 					} else {
 						return item;
-					}
-				}
-
-				if (i === cart.items.length - 1) {
-					if (typeof callback === 'function') {
-						return callback(null);
-					} else {
-						return null;
 					}
 				}
 			});	
@@ -252,9 +251,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 					quantity = -Math.abs(quantity);
 				} else if (typeof quantity === 'function') {
 					callback = quantity;
-					quantity = -1;
+					quantity = -2;
 				} else if (!quantity) {
-					quantity = -1;
+					quantity = -2;
 				}
 
 				cart.set(items, quantity, function(item, decrement) {
@@ -262,7 +261,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 						cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.removeForm)[0]);
 
 			      		request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
-			      			+ '&quantity=' + item.quantity + '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
+			      			+ '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
 			      			if (typeof cart.options.onRemove === 'function') {
 								if (typeof callback !== 'function') {
 	   								cart.options.onRemove(item, r);
@@ -299,11 +298,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 		if (clear === true) {
 			cart.currentTotal = 0;
-
-			arr.forEach(cart.items, function(item, i)  {
-				query('#' + item.id).query(cart.options.quantityField)[0].value = 1;
-			});	
-
 			cart.items = [];
 
 			if (cart.options.clearAction === true) {
@@ -319,8 +313,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				});
 		    } else {
 		    	cart.total();
+
 		    	if (typeof callback === 'function') {
-					callback(item, r);
+					callback(false);
 				}
 		    }
 
@@ -330,21 +325,72 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	// totals the cart
-	Cart.prototype.total = function () {
-		var total = 0,
+	// checks the cart on the server
+	Cart.prototype.check = function (itemID, callback) {
+		var check = true,
 		cart = this;
 
-		this.items.forEach(function (item, i) {
-			total = total + parseFloat(item.price * item.quantity);
-			cart.currentTotal = total;		
-		});
-		
-		dom.byId('total').value = total;
-		
-		this.cartTotal = total;
+		if (typeof cart.options.beforeCheck === 'function') {
+	   		check = cart.options.beforeCheck(items, quantity);
+		}
 
-		return cart;
+		if (check) {
+			cart.find(itemID, function (fndItem, fndIndex) {
+				if (fndItem) {
+					cart.options.xhrObj.data = domForm.toObject(query('#' + fndItem.id).query(cart.options.addForm)[0]) +  domForm.toObject(query(cart.options.checkForm)[0]);
+					
+					request.post(query(cart.options.checkForm)[0].action, cart.options.xhrObj).then(function(r) {
+						if (typeof cart.options.onCheck === 'function') {
+							if (typeof callback !== 'function') {
+								cart.options.onCheck(item, r);
+							} else {
+								callback(item, r);
+							}
+						}
+					});
+				}
+			});
+		} else if (!check && typeof callback === 'function') {
+			callback(check);
+		}
+	};
+
+	// totals the cart
+	Cart.prototype.total = function (callServer, callback) {
+		var total = true,
+		cart = this;
+
+		if (typeof cart.options.beforeTotal === 'function') {
+	   		total = cart.options.beforeTotal(items, quantity);
+		}
+
+		if (total) {
+			cart.items.forEach(function (item, i) {
+				cart.currentTotal+= parseFloat(item.price * item.quantity).toFixed(2);	
+			});
+
+			if (cart.options.totalAction === true && callServer === true) {
+				request.post(query(cart.options.totalForm)[0].action, cart.options.xhrObj).then(function(r) {
+					if (typeof cart.options.onTotal === 'function') {
+						if (typeof callback !== 'function') {
+							cart.options.onTotal(r);
+						} else {
+							callback(r);
+						}
+					}
+				});
+		    } else if (typeof callback === 'function') {
+		    	callback(cart.currentTotal);
+		    }
+		}
+	};
+
+	// totals the cart
+	Cart.prototype.checkout = function (callServer, callback) {
+		var checkout = true,
+		cart = this;
+
+		
 	};
 	
 	return new Cart();
