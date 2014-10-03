@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-		<title>Kwikicart</title>
+		<title>Kwikecart</title>
 	</head>
 	<body>
 		<div>
@@ -23,8 +23,8 @@
 
 						<!-- Our Actions that Kwikicart.js will call on each related call -->
 						<form method="post" action="./add" name="itemadd">
-							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="id" value="3423" />
+							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="price" value="45.00" />
 							<input type="hidden" name="quantity" value="1" />
 							<button type="submit" name="addtocart">Add to Cart</button>
@@ -94,14 +94,14 @@
 		<!-- defining the expected cart actions -->
 		<form method="get" action="./check" name="itemcheck"></form>
 		<form method="get" action="./total" name="totalcart"></form>
-		<form method="get" action="./clear" name="clearcart"></form>
+		<form method="post" action="./clear" name="clearcart"><button type="submit">Clear</button></form>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dojo/dojo.js"></script>
 		<script>
 			// kwikicart.js
 			require({
 				baseUrl: '/js/'
-			}, ['js/kwikicart', 'dojo/query', 'dojo/ready'], 
+			}, ['js/kwikecart', 'dojo/query', 'dojo/ready'], 
 			function(store, query, ready) {
 				'use strict';
 				ready(function () {
@@ -130,7 +130,7 @@
 						}
 					});
 					
-					cart.clear();
+					cart.clear(true);
 
 					// Adding techniques
 					//cart.add('3423', 10);

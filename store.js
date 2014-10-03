@@ -1,11 +1,12 @@
 /**
-* Example shopping cart server for kwikicart.js
+* Example shopping cart server for Kwikecart.js
 * using node.js (nodejs.org) with express.js (npm install express).
 *
 * Not intended for real use, obviously.
 **/
 var express = require('express'),
 app = express(),
+bodyParser = require('body-parser'),
 cartTemplate = {
   user: '',
   session: '',
@@ -18,12 +19,12 @@ cartTemplate = {
 },
 cart = cartTemplate,
 store = [
-  { id: '3423', name: 'Product Server Name 1', quantity: 1, price: 45.00},
-  { id: '1423', name: 'Product Server Name 2', quantity: 1, price: 15.00}
+  { id: '3423', name: 'Worlds Best Item', quantity: 0, price: 45.00},
+  { id: '1423', name: 'Worlds Second Best Item', quantity: 0, price: 15.00}
 ],
 addToCart = function(cartIndex, quantity, storeItem) {
   if (cartIndex !== false) {
-    if (!quantity) { 
+    if (!quantity || quantity === 1) { 
       cart.items[cartIndex].quantity += 1;
     } else {
       cart.items[cartIndex].quantity = quantity;
@@ -31,9 +32,14 @@ addToCart = function(cartIndex, quantity, storeItem) {
   } else {
     cart.items.push(storeItem);
     cartIndex = cart.items.length - 1;
-    cart.items[cartIndex].quantity = quantity;
+    if (!quantity) {
+      cart.items[cartIndex].quantity = 1;
+    } else {
+      cart.items[cartIndex].quantity += quantity;
+    }
   }
 
+  console.log(cart);
   return cart.items[cartIndex];
 },
 isInCart = function(id) {
@@ -43,6 +49,7 @@ isInCart = function(id) {
       return i;
     }
   }
+
   return false;
 },
 removeFromCart = function(cartIndex, quantity) {
@@ -61,32 +68,34 @@ getStoreItem = function(id) {
       return store[i];
     }
   }
+
   return false;
 };
 
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 app.use('/js', express.static(__dirname + '/js'));
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
-// Rendering the test page for an example of Kwikicart in action!
-app.get('/', function(req, res) {
+app.get('/index.html', function(req, res) {
   return res.render('index.html');
 });
 
 app.post('/add', function(req, res) {
   if (req.xhr) {
-    return res.json(addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id'), 0) ));
+    return res.json(addToCart(isInCart(req.param('id')), parseInt(req.param('quantity')),getStoreItem(req.param('id'), 0) ));
   } else {
-    addToCart(isInCart(req.param('id')), req.param('quantity'),getStoreItem(req.param('id'), 0) )
-    return res.render('add.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    addToCart(isInCart(req.param('id')), null, getStoreItem(req.param('id'), 0) )
+    return res.redirect('index.html?add&id=' + req.param('id'));
   }
 });
 
 app.post('/remove', function(req, res) {
   if (req.xhr) {
-    return res.json(removeFromCart(isInCart(req.param('id')), req.param('quantity') ));
+    return res.json(removeFromCart(isInCart(req.param('id')), parseInt(req.param('quantity')) ));
   } else {
-    return res.render('remove.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    return res.redirect('index.html?remove&id=' + req.param('id'));
   }
 });
 
@@ -94,17 +103,17 @@ app.post('/check', function(req, res) {
   if (req.xhr) {
     return res.json(getStoreItem(req.param('id')));
   } else {
-    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    return res.redirect('index.html?check&id=' + req.param('id'));
   }
 });
 
 app.post('/clear', function(req, res) {
-  cart = cartTemplate;
+  cart.items = [];
 
   if (req.xhr) {
     return res.json(cart);
   } else {
-    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    return res.redirect('index.html?clear');
   }
 });
 
@@ -112,7 +121,7 @@ app.get('/total', function(req, res) {
   if (req.xhr) {
      return res.json(cart);
   } else {
-    return res.render('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    return res.redirect('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
   }
 });
 

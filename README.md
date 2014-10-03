@@ -1,8 +1,8 @@
-Kwikicart.js 0.2.0
+Kwikecart.js 0.2.0
 ===========================
-Need a quick JavaScript Shopping Cart? With Kwikicart progressive enhancement is mandatory and DOM form outlines serve as a client side cart API for easily leveraging already defined workflows. Kwikicart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
+Need a quick JavaScript Shopping Cart? With Kwikecart progressive enhancement is mandatory and DOM form outlines serve as a client side cart API for easily leveraging already defined workflows. Kwikecart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
 
-Kwikicart does make some markup assumptions:
+Kwikecart does make some markup assumptions:
 
 	Product markup:
 		* Each product shares a class (.product by default) (mandatory)
@@ -28,8 +28,8 @@ Lets assume a product on the page is marked up like the following:
 			<div class="product-price">$45.00</div>
 		</div>
 	</div>
-	<!-- Our Actions that Kwikicart.js will call on each related call -->
-	<!-- Kwikicart will only send the unique id and quantity to the server -->
+	<!-- Our Actions that Kwikecart.js will call on each related call -->
+	<!-- Kwikecart will only send the unique id and quantity to the server -->
 	<form method="post" action="./add" name="itemadd">
 		<div class="itemFields">
 			<input type="hidden" name="name" value="Worlds Best Item" />
@@ -52,7 +52,7 @@ add event are sent, any fields nested here are also appended -->
 ```js
 require({
 	baseUrl: 'js/'
-}, ['js/kwikicart', 'dojo/ready'], 
+}, ['js/kwikecart', 'dojo/ready'], 
 function(store, ready) {
 	'use strict';
 	ready(function () {	
