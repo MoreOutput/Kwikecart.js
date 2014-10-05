@@ -1,6 +1,6 @@
 Kwikecart.js 0.2.0
 ===========================
-Need a quick JavaScript Shopping Cart? With Kwikecart progressive enhancement is mandatory and DOM form outlines serve as a client side cart API for easily leveraging already defined workflows. Kwikecart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
+Kwikecart is a client side shopping cart that makes progressive enhancement mandatory and leverages already defined workflows. Kwikecart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
 
 Kwikecart does make some markup assumptions:
 
@@ -228,12 +228,17 @@ cart.total(true); // Total with server call
 
 ## Disable Cookies ##
 
-Disable cookies by setting the expires option to -1
+Disable cookies by setting the expires option to -1. When building with cookie data each item
+is added via add().
 
 ## Events ##
 
 Before events are fired, obviously, before the action begins to process. Before events
 must return true or the action will be halted. On events are fired at the end of action processing. 
+
+Before callbacks will pass back the passed in items and quantity: function(items, quanitiy) {}
+
+'On' callbacks will give back the passed in items and server response: function(items, res) {}
 
 ```js
 beforeCheck: null, 

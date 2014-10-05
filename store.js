@@ -38,8 +38,6 @@ addToCart = function(cartIndex, quantity, storeItem) {
       cart.items[cartIndex].quantity += quantity;
     }
   }
-
-  console.log(cart);
   return cart.items[cartIndex];
 },
 isInCart = function(id) {
@@ -75,8 +73,8 @@ getStoreItem = function(id) {
 app.engine('.html', require('ejs').__express);
 app.set('view engine', 'html');
 app.use('/js', express.static(__dirname + '/js'));
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 app.get('/index.html', function(req, res) {
   return res.render('index.html');

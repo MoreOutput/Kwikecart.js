@@ -80,7 +80,7 @@
 					<input type="hidden" name="no_shipping" value="1"/>
 					<input type="hidden" name="return" value="http://www.example.com" />
 					<input type="hidden" name="cancel_return" value="http://www.example.com" />
-					<input type="hidden" name="notify_url" value="http://www.example.com?paypalcallback" />
+					<input type="hidden" name="notify_url" value="http://www.example.com/ppcallback" />
 					<input type="hidden" name="invoice" value="" />
 					<input type="hidden" name="trackingid" value="" />
 					<input type="hidden" name="currency_code" value="USD" />
@@ -101,15 +101,33 @@
 			// kwikicart.js
 			require({
 				baseUrl: '/js/'
-			}, ['js/kwikecart', 'dojo/query', 'dojo/ready'], 
-			function(store, query, ready) {
+			}, ['js/kwikecart', 'dojo/query', 'dojo/dom-construct', 'dojo/ready'], 
+			function(store, query, domConstruct, ready) {
 				'use strict';
 				ready(function () {
-					// Test Array	
 					var products = [
 						{ id: '3423', name: 'Product1', quantity: 1, price: 45.00},
 						{ id: '1423', name: 'Product2', quantity: 1, price: 15.00}
 					],
+					addItemToSidebar = function(itemObj) {
+						cart.find(itemObj.id, function(fndItem, fndIndex) {
+							var htmlStr = '<div id="cart-' + itemObj.id + '">' 
+								+ '<div>' + itemObj.name + '</div>' 
+								+ '<div class="quantity">' + itemObj.quantity + '</div>' 
+								+ '</div>';
+
+							if (query('#cart-' + itemObj.id).length > 0) {
+								domConstruct.place(htmlStr, query('#cart-' + itemObj.id)[0], 'replace');
+							} else {
+								domConstruct.place(htmlStr, query('.cart-products')[0], 'last');
+							}
+						});
+					},
+					removeItemFromSidebar = function(itemObj) {
+						if (query('#cart-' + itemObj.id).length > 0) {
+							domConstruct.destroy(query('#cart-' + itemObj.id)[0]);
+						} 
+					},
 					// Setting up the store, and creating a cart for the user
 					cart = store.create({
 						expires: 1,
@@ -119,21 +137,20 @@
 						},
 						onAdd: function(item, r) {
 							if (item) {
-						//		console.log(cart.items);
+								addItemToSidebar(item);
 							}
 						},
 						beforeRemove: function(items, quantity) {
 							return true;
 						},
 						onRemove: function(item, r) {
-							console.log(cart.items.length);
+							if (item) {
+								removeItemFromSidebar(item);
+							}
 						}
 					});
 					
 					cart.clear(true);
-
-					// Adding techniques
-					//cart.add('3423', 10);
 
 					//cart.check('3423');
 				

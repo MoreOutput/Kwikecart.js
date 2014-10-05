@@ -9,7 +9,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			expires: 1, // Cookie expiration
 			taxMultiplier: 0.06,
 			currency: 'USD',
-			attachFieldIDs: false,
+			attachFields: '',
 			// Names of related DOM Data
 			productNode: '.product',
 			cartItems: '.cart-products',
@@ -66,7 +66,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
  				evt.stopPropagation();
             	evt.preventDefault();
-
+			
             	cart.add(item);
 			}),
 			removeEvt = on(query('#' + item.id + ' ' + cart.options.removeForm)[0], 'submit', function(evt) {
@@ -80,12 +80,13 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		return cart;
 	};
 
-	// Outlines cart items from cookie information
 	Cart.prototype.setupCartFromCookies = function (callback) {
 		var cart = this;	
 
-		if (cookie('nacart') !== 'null') {
-			cart.items = JSON.parse(cookie('nacart'));
+		if (cookie('nacart') !== 'null' && cart.options.expires !== -1) {
+			arr.forEach(JSON.parse(cookie('nacart')), function(item, i) {
+				cart.add(item, item.quantity);
+			});
 		} else {
 			cart.items = [];
 		}	
@@ -95,7 +96,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		} 
 	}; 	
 
-	// Turn non obj item references to item objects based on dom data
 	Cart.prototype.createItemObj = function (itemData, callback) {
 		var cart = this,
 		itemObj;
@@ -122,8 +122,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 	Cart.prototype.set = function(items, quantity, callback) {
 		var cart = this,
+		tmpQuantity,
 		i = 0;
-
+	
 		if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
 			items = [cart.createItemObj(items)];
 		} else {
@@ -131,18 +132,21 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				items[i] = cart.createItemObj(item);
 			});
 		}
-		
+
 		arr.forEach(items, function(item, i)  {
 			cart.find(item.id, function (fndItem, fndIndex) {
-				if (fndItem === null && quantity !== -1 && quantity !== -2) {
+				if (fndItem === null) {
 					if (quantity && quantity > 1) {
 						item.quantity = quantity;
+					} else if (quantity === -1 && item.quantity !== 1) {
+						item.quantity += 1;
 					}
 
 					cart.items.push(item);
-				} else if (fndItem !== null) {
+				} else {
 					item = fndItem;
-					
+					tmpQuantity = item.quantity;
+
 					if (quantity === -1) {
 						item.quantity += 1;
 					} else if (quantity === -2) {
@@ -154,16 +158,22 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 				if (item.quantity <= 0) {
 					cart.items.splice(fndIndex, 1);
+				} else if (item.quantity > tmpQuantity && typeof cart.options.onIncrement === 'function') {
+					cart.options.onIncrement(item);
+				} else if (item.quantity < tmpQuantity && typeof cart.options.onDecrement === 'function') {
+					cart.options.onDecrement(item);
 				}
 
-				callback(item, true);
-			
 				if (cookie('nacart')) {
 					cookie('nacart', null, {expires: -1});
 				}			
-
+				
 				cookie('nacart', JSON.stringify(cart.items), 
 					{expires: cart.options.expires});
+
+				query('#' + item.id).query(cart.options.quantityField)[0].value = item.quantity;
+
+				callback(item, true);
 			});
 		});
 
@@ -173,7 +183,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 	Cart.prototype.add = function (items, quantity, callback) {		
 		var cart = this,
 		add = true;
-   				
+ 
 		if (typeof cart.options.beforeAdd === 'function') {
 	   		add = cart.options.beforeAdd(items, quantity);
 		}
@@ -189,10 +199,16 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			}
 
 			cart.set(items, quantity, function(item, increment) {
+				var addedFields = ioQuery.objectToQuery(cart.options.attachFields);
+
+				if (addedFields.length > 0) {
+					addedFields = '&' + addedFields;
+				}
+
 				if (cart.options.addAction) {
 					cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
 		      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
-		      			+ '&increment=' + increment, cart.options.xhrObj).then(function(r) {
+		      			+ '&increment=' + increment + addedFields, cart.options.xhrObj).then(function(r) {
 		      			if (typeof cart.options.onAdd === 'function') {
 							if (typeof callback !== 'function') {
    								cart.options.onAdd(item, r);
@@ -217,22 +233,28 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 	};
 
 	Cart.prototype.find = function (id, callback) {
-		var cart = this;
+		var cart = this,
+		fndItem = null,
+		fndIndex = -1;
+
 		if (cart.items.length !== 0) {
 			arr.forEach(cart.items, function (item, i) {
 				if (id === item.id) {
-					if (typeof callback === 'function') {
-						return callback(item, i);
-					} else {
-						return item;
-					}
+					fndItem = item;
+					fndIndex = i;		
 				}
 			});	
+
+			if (typeof callback === 'function') {
+				return callback(fndItem, fndIndex);
+			} else {
+				return fndItem;
+			}
 		} else {
 			if (typeof callback === 'function') {
-				return callback(null);
+				return callback(fndItem, fndIndex);
 			} else {
-				return null;
+				return fndItem;
 			}
 		}
 	};		
@@ -325,7 +347,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	// checks the cart on the server
 	Cart.prototype.check = function (itemID, callback) {
 		var check = true,
 		cart = this;
@@ -355,7 +376,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	// totals the cart
 	Cart.prototype.total = function (callServer, callback) {
 		var total = true,
 		cart = this;
@@ -385,12 +405,11 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	// totals the cart
 	Cart.prototype.checkout = function (callServer, callback) {
-		var checkout = true,
-		cart = this;
+		var cart = this,
+		checkout = true;
 
-		
+	
 	};
 	
 	return new Cart();
