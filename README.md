@@ -5,7 +5,7 @@ Kwikecart is a client side shopping cart that makes progressive enhancement mand
 Kwikecart does make some markup assumptions:
 
 	Product markup:
-		* Each product shares a class (.product by default) (mandatory)
+		* Each product shares a class (mandatory)
 		* Each product node has an unqiue ID. (mandatory)
 		* A form for the add/remove actions (mandatory)
 
@@ -140,16 +140,17 @@ cart.add(products);
 cart.add(query('.product'));
 ```
 
-Incrementing items appends increment=true to the add request (along with providing a total through the quantity field).
+If add an item thats aready in the cart without defining a quantity it is incremented by 1.
 ```js
-cart.add('product-3423'); 
-cart.add('product-3423'); 
+cart.add('product-3423'); // +1
+cart.add('product-3423');  // +1
 ```
 
 You can set the quantity by giving the wanted total.
 ```js
 cart.add('product-3423', 100); 
 ```
+
 ## Remove with cart.remove(items, quantity, callback) ##
 
 Removing items with remove() is the same as adding:
@@ -199,7 +200,7 @@ Finding item in the cart, null if its not there:
 cart.find('product-3430');
 ```
 
-DOM item to object:
+DOM outline to item object:
 ```js
 cart.createItemObj('product-3430');
 ```
@@ -213,7 +214,7 @@ For single item updates, pass in the id. The server should send back the item as
 ```js
 cart.check('product-3423');
 ```
-Calling check() without a passed in ID will send the entire client cart to the server.
+Calling check() without a passed in ID will send the entire client cart to the server
 ```js
 cart.check();
 ```
