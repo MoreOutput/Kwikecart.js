@@ -30,9 +30,7 @@
 							<button type="submit" name="addtocart">Add to Cart</button>
 						</form>
 						<form method="post" action="./remove" name="itemremove">
-							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="id" value="3423" />
-							<input type="hidden" name="price" value="45.00" />
 							<button type="submit" name="removecart">Remove</button>
 						</form>
 					</li>
@@ -55,9 +53,7 @@
 							<button type="submit" name="addtocart">Add to Cart</button>
 						</form>
 						<form method="post" action="./remove" name="itemremove">
-							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="id" value="1423" />
-							<input type="hidden" name="price" value="45.00" />
 							<button type="submit" name="removecart">Remove</button>
 						</form>
 					</li>
@@ -147,6 +143,12 @@
 							if (item) {
 								removeItemFromSidebar(item);
 							}
+						},
+						onIncrement: function(item, r) {
+
+						},
+						onDecrement: function(item, r) {
+							
 						}
 					});
 					

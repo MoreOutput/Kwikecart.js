@@ -1,19 +1,12 @@
-Kwikecart.js 0.2.0
+Kwikecart.js 0.5.0
 ===========================
-Kwikecart is a client side shopping cart that makes progressive enhancement mandatory and leverages already defined workflows. Kwikecart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
+Kwikecart is a client side shopping cart written with progressive enhancement in mind. Kwikecart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
 
 Kwikecart does make some markup assumptions:
 
 	Product markup:
-		* Each product shares a class (mandatory)
-		* Each product node has an unqiue ID. (mandatory)
-		* A form for the add/remove actions (mandatory)
-
-	Page markup:
-		* A form for the check item action (can be set via config)
-		* A form for the clear action (can be set via config)
-		* A form for the total action (can be set via config)
-		* A form for the checkout action (mandatory)
+		* Each product shares a class
+		* Each product node has an unqiue ID.
 
 Lets assume a product on the page is marked up like the following:
 
@@ -38,14 +31,18 @@ Lets assume a product on the page is marked up like the following:
 			<input type="hidden" name="quantity" value="1" />
 		</div>
 		<button type="submit" name="addtocart">Add to Cart</button>
+	</form>
+	<form method="post" action="./remove" name="itemremove">
+		<input type="hidden" name="id" value="3423" />
 		<button type="submit" name="removecart">Remove</button>
+	</form>
+	<form method="get" action="./check" name="itemcheck">
+	    	<input type="hidden" name="id" value="3423" />
 	</form>
 </li>
 
-<!-- You can also outline the forms in a more genreral way -->
-<!-- If forms are appended like this then the fields in the forms 
-add event are sent, any fields nested here are also appended -->
-<form method="get" action="./check" name="itemcheck"></form>
+<!-- Checkout, ant fields defined here will be appended -->
+<form method="get" action="./checkout" name="checkout"></form>
 
 ```
 ## Loading and Setup for DOJO 1.9+ ##
@@ -236,7 +233,6 @@ is added via add().
 
 Before events are fired, obviously, before the action begins to process. Before events
 must return true or the action will be halted. On events are fired at the end of action processing. 
-
 Before callbacks will pass back the passed in items and quantity: function(items, quanitiy) {}
 
 'On' callbacks will give back the passed in items and server response: function(items, res) {}
