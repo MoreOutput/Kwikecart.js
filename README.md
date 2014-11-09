@@ -194,7 +194,7 @@ cart.items;
 
 Finding item in the cart, null if its not there:
 ```js
-cart.find('product-3430');
+cart.find('product-3430'); 
 ```
 
 DOM outline to item object:
@@ -231,11 +231,10 @@ is added via add().
 
 ## Events ##
 
-Before events are fired, obviously, before the action begins to process. Before events
+Before events are fired before the action begins to process. Before events
 must return true or the action will be halted. On events are fired at the end of action processing. 
-Before callbacks will pass back the passed in items and quantity: function(items, quanitiy) {}
 
-'On' callbacks will give back the passed in items and server response: function(items, res) {}
+Events return the values expected in the action, aside from callback, plus any server response. See onAdd below for an example: 
 
 ```js
 beforeCheck: null, 
@@ -249,7 +248,9 @@ onCheck: null,
 onRemove: null,
 onClear: null,
 onCheckout: null,
-onAdd: null,
+onAdd: function(itemsPassedToAdd, quantityPassedToAdd, responseFromAddServerCall) {
+	// Do something
+},
 onDecrement: null, // Fired when an items quantity goes down but not to 0
 onIncrement: null, // Fired when an items quantity goes up but not on 1
 onTotal: null

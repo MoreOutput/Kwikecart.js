@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<meta charset="utf-8" />
 		<title>Kwikecart</title>
+		<meta charset="utf-8" />
 	</head>
 	<body>
 		<div>
-			<section id="products">		
+			<div id="msg">
+				<% if (page.action) { %>
+					<% if (page.action === 'add') { %>
+						Item Added.
+					<% } else if (page.action === 'remove') { %>
+						Item Removed.
+					<% } %>
+				<% } %>
+			</div>
+			<section id="store-index">		
 				<header>
 					<h1>Products</h1>		
 				</header>	
@@ -89,15 +98,15 @@
 
 		<!-- defining the expected cart actions -->
 		<form method="get" action="./check" name="itemcheck"></form>
-		<form method="get" action="./total" name="totalcart"></form>
-		<form method="post" action="./clear" name="clearcart"><button type="submit">Clear</button></form>
+		<form method="get" action="./total" name="totalcart"><button type="submit">Total Cart</button></form>
+		<form method="post" action="./clear" name="clearcart"><button type="submit">Clear Cart</button></form>
 
 		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dojo/dojo.js"></script>
 		<script>
 			// kwikicart.js
 			require({
 				baseUrl: '/js/'
-			}, ['js/kwikecart', 'dojo/query', 'dojo/dom-construct', 'dojo/ready'], 
+			}, ['js/kwikecart.dojo', 'dojo/query', 'dojo/dom-construct', 'dojo/ready'], 
 			function(store, query, domConstruct, ready) {
 				'use strict';
 				ready(function () {
@@ -131,7 +140,7 @@
 						beforeAdd: function(items, quantity) {
 							return true;
 						},
-						onAdd: function(item, r) {
+						onAdd: function(item, response) {
 							if (item) {
 								addItemToSidebar(item);
 							}
@@ -139,16 +148,19 @@
 						beforeRemove: function(items, quantity) {
 							return true;
 						},
-						onRemove: function(item, r) {
+						onRemove: function(item, response) {
 							if (item) {
 								removeItemFromSidebar(item);
 							}
 						},
-						onIncrement: function(item, r) {
+						onIncrement: function(item, response) {
 
 						},
-						onDecrement: function(item, r) {
+						onDecrement: function(item, response) {
 							
+						},
+						onClear: function(clearedCookies, response) {
+
 						}
 					});
 					

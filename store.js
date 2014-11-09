@@ -19,29 +19,26 @@ cartTemplate = {
 },
 cart = cartTemplate,
 store = [
-  { id: '3423', name: 'Worlds Best Item', quantity: 0, price: 45.00},
-  { id: '1423', name: 'Worlds Second Best Item', quantity: 0, price: 15.00}
+  { id: '3423', name: 'Worlds Best Item', quantity: 1, price: 45.00},
+  { id: '1423', name: 'Worlds Second Best Item', quantity: 1, price: 15.00},
+  { id: '1423', name: 'Worlds Third Best Item', quantity: 1, price: 145.00}
 ],
-addToCart = function(cartIndex, quantity, storeItem) {
+addToCart = function(storeItem, quantity) {
+  var cartIndex = isInCart(storeItem.id);
+
   if (cartIndex !== false) {
-    if (!quantity || quantity === 1) { 
-      cart.items[cartIndex].quantity += 1;
-    } else {
-      cart.items[cartIndex].quantity = quantity;
-    }
+    cart.items[cartIndex].quantity += quantity;
   } else {
-    cart.items.push(storeItem);
-    cartIndex = cart.items.length - 1;
-    if (!quantity) {
-      cart.items[cartIndex].quantity = 1;
-    } else {
-      cart.items[cartIndex].quantity += quantity;
-    }
+    cartIndex = 0;
+    storeItem.quantity = quantity;
+    cart.items.push(storeItem); 
   }
+
   return cart.items[cartIndex];
 },
 isInCart = function(id) {
   var i = 0;
+
   for (i; i < cart.items.length; i += 1) {
     if (id === cart.items[i].id) {
       return i;
@@ -51,9 +48,9 @@ isInCart = function(id) {
   return false;
 },
 removeFromCart = function(cartIndex, quantity) {
-  if (cartIndex !== false && quantity) {
+  if (cartIndex && quantity !== -1) {
     cart.items[cartIndex].quantity = quantity;
-  } else if (!quantity || quantity === '-1') {
+  } else {
     cart.items.splice(cartIndex, 1);
   }
 
@@ -61,6 +58,7 @@ removeFromCart = function(cartIndex, quantity) {
 },
 getStoreItem = function(id) {
   var i = 0;
+  
   for (i; i < store.length; i += 1) {
     if (id === store[i].id) {
       return store[i];
@@ -68,6 +66,19 @@ getStoreItem = function(id) {
   }
 
   return false;
+},
+totalCart = function() {
+  var i = 0;
+
+  cart.total = 0;
+
+  for (i; i < cart.items; i += 1) {
+    cart.total += cart.items[i].price;
+  }  
+
+  cart.total = cart.total.toFixed(2);
+
+  return cart.total;
 };
 
 app.engine('.html', require('ejs').__express);
@@ -76,32 +87,49 @@ app.use('/js', express.static(__dirname + '/js'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.get('/index.html', function(req, res) {
-  return res.render('index.html');
+app.get('/index', function(req, res) {
+  return res.render('index.html', {page: { cart: cart, action: req.param('action') }});
 });
 
 app.post('/add', function(req, res) {
-  if (req.xhr) {
-    return res.json(addToCart(isInCart(req.param('id')), parseInt(req.param('quantity')),getStoreItem(req.param('id'), 0) ));
+  var storeItem = getStoreItem(req.param('id')),
+  quantity = req.param('quantity');
+
+  if (!quantity) {
+    quantity = 1;
   } else {
-    addToCart(isInCart(req.param('id')), null, getStoreItem(req.param('id'), 0) )
-    return res.redirect('index.html?add&id=' + req.param('id'));
+    quantity = parseInt(quantity);
+  }
+
+  if (req.xhr) {
+    return res.json(addToCart(storeItem, quantity));
+  } else {
+    storeItem = addToCart(storeItem, quantity);
+    return res.redirect('index?action=add&id=' + req.param('id') + '&quantity=' + storeItem.quantity);
   }
 });
 
 app.post('/remove', function(req, res) {
-  if (req.xhr) {
-    return res.json(removeFromCart(isInCart(req.param('id')), parseInt(req.param('quantity')) ));
+  var quantity = req.param('quantity');
+
+  if (!quantity) {
+    quantity = -1;
   } else {
-    return res.redirect('index.html?remove&id=' + req.param('id'));
+    quantity = parseInt(quantity);
+  }
+
+  if (req.xhr) {
+    return res.json(removeFromCart(isInCart(req.param('id')), quantity));
+  } else {
+    return res.redirect('index?action=remove&id=' + req.param('id')  + '&quantity=' + quantity);
   }
 });
 
-app.post('/check', function(req, res) {
+app.get('/check', function(req, res) {
   if (req.xhr) {
     return res.json(getStoreItem(req.param('id')));
   } else {
-    return res.redirect('index.html?check&id=' + req.param('id'));
+    return res.render('check.html');
   }
 });
 
@@ -111,15 +139,15 @@ app.post('/clear', function(req, res) {
   if (req.xhr) {
     return res.json(cart);
   } else {
-    return res.redirect('index.html?clear');
+    return res.redirect('index?action=clear');
   }
 });
 
 app.get('/total', function(req, res) {
   if (req.xhr) {
-     return res.json(cart);
+    return res.json(cart);
   } else {
-    return res.redirect('index.html?' + req.originalUrl.replace(/.*[?]/, ''));
+    return res.render('total.html', {cart: cart});
   }
 });
 
