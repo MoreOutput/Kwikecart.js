@@ -1,8 +1,6 @@
-define(['dojo/_base/lang', 'dojo/query','dojo/_base/array', 'dojo/cookie', 'dojo/on', 
-	'dojo/request', 'dojo/dom-form', 'dojo/io-query', 'dojo/ready'], 
-function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
+
 	'use strict';	
-	var Cart = function (options) {	
+	var Kwikecart = function (options) {	
 		this.currentTotal = 0; 
 		this.items = [];
 		this.options = {
@@ -51,9 +49,10 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		};
 
 		return this;
-	}
+	},
+	Cart = new Kwikecart();
 
-	Cart.prototype.create = function (options) {		
+	Kwikecart.prototype.create = function (options) {		
 		var cart = this;
 
 		cart.options = lang.mixin(cart.options, options);
@@ -80,7 +79,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		return cart;
 	};
 
-	Cart.prototype.setupCartFromCookies = function (callback) {
+	Kwikecart.prototype.setupCartFromCookies = function (callback) {
 		var cart = this;	
 
 		if (cookie('nacart') !== 'null' && cart.options.expires !== -1) {
@@ -96,7 +95,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		} 
 	}; 	
 
-	Cart.prototype.createItemObj = function (itemData, callback) {
+	Kwikecart.prototype.createItemObj = function (itemData, callback) {
 		var cart = this,
 		itemObj;
 
@@ -120,7 +119,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	Cart.prototype.set = function(items, quantity, callback) {
+	Kwikecart.prototype.set = function(items, quantity, callback) {
 		var cart = this,
 		tmpQuantity,
 		i = 0;
@@ -180,7 +179,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		return cart;
 	}	
 
-	Cart.prototype.add = function (items, quantity, callback) {		
+	Kwikecart.prototype.add = function (items, quantity, callback) {		
 		var cart = this,
 		add = true;
  
@@ -211,10 +210,10 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		      			+ '&increment=' + increment + addedFields, cart.options.xhrObj).then(function(r) {
 		      			if (typeof cart.options.onAdd === 'function') {
 							if (typeof callback !== 'function') {
-   								cart.options.onAdd(item, r);
+   								cart.options.onAdd(item, quantity, r);
    							} else {
-   								cart.options.onAdd(item, r);
-   								callback(item, r);
+   								cart.options.onAdd(item, quantity, r);
+   								callback(item, quantity, rv);
    							}
 						}
 						cart.total();
@@ -223,7 +222,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		      		cart.total();
 		      		
 		      		if (typeof callback === 'function') {
-						callback(item);
+						callback(items, quantity, null);
 					}
 		      	}
 			});
@@ -232,10 +231,11 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		return cart;
 	};
 
-	Cart.prototype.find = function (id, callback) {
+	Kwikecart.prototype.find = function (id, callback) {
 		var cart = this,
 		fndItem = null,
-		fndIndex = -1;
+		fndIndex = -1,
+		i = 0;
 
 		if (cart.items.length !== 0) {
 			arr.forEach(cart.items, function (item, i) {
@@ -259,7 +259,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};		
 
-	Cart.prototype.remove = function (items, quantity, callback) {
+	Kwikecart.prototype.remove = function (items, quantity, callback) {
 		var cart = this,
 		remove = true;
 
@@ -268,7 +268,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		   		remove = cart.options.beforeRemove(items, quantity);
 			}
 
-			if (remove === true) {
+			if (remove === true) { 
 				if (quantity > 0) {
 					quantity = -Math.abs(quantity);
 				} else if (typeof quantity === 'function') {
@@ -286,10 +286,10 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			      			+ '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
 			      			if (typeof cart.options.onRemove === 'function') {
 								if (typeof callback !== 'function') {
-	   								cart.options.onRemove(item, r);
+	   								cart.options.onRemove(item, quantity, r);
 	   							} else {
 	   								cart.options.onRemove(item, r);
-	   								callback(item, r);
+	   								callback(item, quantity, r);
 	   							}
 							}
 							cart.total();
@@ -298,7 +298,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			      		cart.total();
 			      		
 			      		if (typeof callback === 'function') {
-							callback(item, r);
+							callback(items, quantity, null);
 						}
 			      	}
 				});
@@ -310,7 +310,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		return cart;
 	};
 
-	Cart.prototype.clear = function(clearCookies) {
+	Kwikecart.prototype.clear = function(clearCookies) {
 		var cart = this,
 		clear = true;
 
@@ -326,7 +326,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				request.post(query(cart.options.clearForm)[0].action, cart.options.xhrObj).then(function(r) {
 					if (typeof cart.options.onClear === 'function') {
 						if (typeof callback !== 'function') {
-								cart.options.onClear(item, r);
+								cart.options.onClear(clearCookies, r);
 							} else {
 								callback(item, r);
 							}
@@ -347,7 +347,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	Cart.prototype.check = function (itemID, callback) {
+	Kwikecart.prototype.check = function (itemID, callback) {
 		var check = true,
 		cart = this;
 
@@ -363,9 +363,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 					request.post(query(cart.options.checkForm)[0].action, cart.options.xhrObj).then(function(r) {
 						if (typeof cart.options.onCheck === 'function') {
 							if (typeof callback !== 'function') {
-								cart.options.onCheck(item, r);
+								cart.options.onCheck(itemID, r);
 							} else {
-								callback(item, r);
+								callback(itemID, r);
 							}
 						}
 					});
@@ -376,8 +376,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	Cart.prototype.total = function (callServer, callback) {
+	Kwikecart.prototype.total = function (callServer, callback) {
 		var total = true,
+		i = 0,
 		cart = this;
 
 		if (typeof cart.options.beforeTotal === 'function') {
@@ -393,9 +394,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				request.post(query(cart.options.totalForm)[0].action, cart.options.xhrObj).then(function(r) {
 					if (typeof cart.options.onTotal === 'function') {
 						if (typeof callback !== 'function') {
-							cart.options.onTotal(r);
+							cart.options.onTotal(callServer, r);
 						} else {
-							callback(r);
+							callback(callServer, r);
 						}
 					}
 				});
@@ -405,12 +406,17 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		}
 	};
 
-	Cart.prototype.checkout = function (callServer, callback) {
+	Kwikecart.prototype.checkout = function (callServer, callback) {
 		var cart = this,
 		checkout = true;
-
-	
 	};
 	
-	return new Cart();
-});
+	Kwikecart.prototype.xhr = function(method, url, async, callback) {
+		if (typeof XMLHttpRequest !== 'undefined') {
+        	return new XMLHttpRequest();  
+    	}
+	}
+
+	Kwikecart.prototype.mixin = function(obj1, obj2, callback) {
+		return callback();
+	}

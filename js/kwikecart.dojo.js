@@ -66,9 +66,14 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 		cart.options = lang.mixin(cart.options, options);
 
-		if (typeof cookie('nacart') !== 'undefined') {
+
+		if (typeof cookie('nacart') !== 'undefined' && cart.options.expires !== -1) {
 			cart.setupCartFromCookies();
-		}			
+		}
+
+		if (cart.options.expires <= -1) {
+			cookie('nacart', null, {expires: -1});
+		}
 
 		arr.forEach(query(cart.options.productNode), function(item) {
 			var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
@@ -143,9 +148,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		arr.forEach(items, function(item, i)  {
 			cart.find(item.id, function (fndItem, fndIndex) {
 				if (fndItem === null) {
-					if (quantity && quantity > 1) {
+					if (quantity && quantity >= 1) {
 						item.quantity = quantity;
-					} else if (quantity === -1 && item.quantity !== 1) {
+					} else if (quantity === -1) {
 						item.quantity += 1;
 					}
 
@@ -157,7 +162,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 					if (quantity === -1) {
 						item.quantity += 1;
 					} else if (quantity === -2) {
-						item.quantity -= 1;
+						item.quantity = 0;
 					} else {
 						item.quantity += quantity;
 					}
@@ -174,7 +179,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				if (cookie('nacart')) {
 					cookie('nacart', null, {expires: -1});
 				}			
-				
+
 				cookie('nacart', JSON.stringify(cart.items), 
 					{expires: cart.options.expires});
 

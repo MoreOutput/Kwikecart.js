@@ -31,9 +31,6 @@ Lets assume a product on the page is marked up like the following:
 			<input type="hidden" name="quantity" value="1" />
 		</div>
 		<button type="submit" name="addtocart">Add to Cart</button>
-	</form>
-	<form method="post" action="./remove" name="itemremove">
-		<input type="hidden" name="id" value="3423" />
 		<button type="submit" name="removecart">Remove</button>
 	</form>
 	<form method="get" action="./check" name="itemcheck">

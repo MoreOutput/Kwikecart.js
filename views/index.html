@@ -36,11 +36,8 @@
 							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="price" value="45.00" />
 							<input type="hidden" name="quantity" value="1" />
-							<button type="submit" name="addtocart">Add to Cart</button>
-						</form>
-						<form method="post" action="./remove" name="itemremove">
-							<input type="hidden" name="id" value="3423" />
-							<button type="submit" name="removecart">Remove</button>
+							<button type="submit" name="productaction" value="add">Add to Cart</button>
+							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
 						</form>
 					</li>
 					<li class="product" id="1423">
@@ -59,11 +56,8 @@
 							<input type="hidden" name="id" value="1423" />
 							<input type="hidden" name="price" value="45.00" />
 							<input type="hidden" name="quantity" value="1" />
-							<button type="submit" name="addtocart">Add to Cart</button>
-						</form>
-						<form method="post" action="./remove" name="itemremove">
-							<input type="hidden" name="id" value="1423" />
-							<button type="submit" name="removecart">Remove</button>
+							<button type="submit" name="productaction" value="add">Add to Cart</button>
+							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
 						</form>
 					</li>
 				</ul>
@@ -135,36 +129,40 @@
 					},
 					// Setting up the store, and creating a cart for the user
 					cart = store.create({
-						expires: 1,
+						expires: -1,
 						productNode: '.product',
 						beforeAdd: function(items, quantity) {
+							console.log('beforeAdd');
 							return true;
 						},
 						onAdd: function(item, response) {
+							console.log('onAdd');
 							if (item) {
 								addItemToSidebar(item);
 							}
 						},
 						beforeRemove: function(items, quantity) {
+							console.log('beforeRemove');
 							return true;
 						},
 						onRemove: function(item, response) {
+							console.log('onRemove');
 							if (item) {
 								removeItemFromSidebar(item);
 							}
 						},
 						onIncrement: function(item, response) {
-
+							console.log('onIncrement');
 						},
 						onDecrement: function(item, response) {
-							
+							console.log('onDecrement');
 						},
 						onClear: function(clearedCookies, response) {
 
 						}
 					});
 					
-					cart.clear(true);
+					//cart.clear(true);
 
 					//cart.check('3423');
 				
