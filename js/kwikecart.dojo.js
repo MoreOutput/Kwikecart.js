@@ -25,7 +25,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			clearForm: '[name=clearcart]',
 			totalForm: '[name=totalcart]',
 			checkoutForm: '[name=checkout]',
-			// Addresses are set via forms above or directly
 			/*
 			addAddress: null,
 			removeAddress: null,
@@ -66,20 +65,19 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 		cart.options = lang.mixin(cart.options, options);
 
-
 		if (typeof cookie('nacart') !== 'undefined' && cart.options.expires !== -1) {
-			cart.setupCartFromCookies();
+            cart.setupCartFromCookies();
 		}
 
 		if (cart.options.expires <= -1) {
-			cookie('nacart', null, {expires: -1});
+            cookie('nacart', null, {expires: -1});
 		}
 
-		arr.forEach(query(cart.options.productNode), function(item) {
-			var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
+		arr.forEach(query(cart.options.productNode), function(item, i) {
+            var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
  				evt.stopPropagation();
             	evt.preventDefault();
-			
+		        
             	cart.add(item);
 			}),
 			removeEvt = on(query('#' + item.id + ' ' + cart.options.removeForm)[0], 'submit', function(evt) {
@@ -89,8 +87,8 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
             	cart.remove(item);
 			});
 		});
-
-		return cart;
+        
+        return cart;
 	};
 
 	Cart.prototype.setupCartFromCookies = function (callback) {
@@ -353,9 +351,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				}
 		    }
 
-		    if (clearCookies !== false) {
-		    	cookie('nacart', null, {expires: -1});
-		    }
+		    cookie('nacart', null, {expires: -1});
 		}
 	};
 
@@ -370,7 +366,8 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		if (check) {
 			cart.find(itemID, function (fndItem, fndIndex) {
 				if (fndItem) {
-					cart.options.xhrObj.data = domForm.toObject(query('#' + fndItem.id).query(cart.options.addForm)[0]) +  domForm.toObject(query(cart.options.checkForm)[0]);
+					cart.options.xhrObj.data = domForm.toObject(query('#' + fndItem.id).query(cart.options.addForm)[0]) 
+                    +  domForm.toObject(query(cart.options.checkForm)[0]);
 					
 					request.post(query(cart.options.checkForm)[0].action, cart.options.xhrObj).then(function(r) {
 						if (typeof cart.options.onCheck === 'function') {

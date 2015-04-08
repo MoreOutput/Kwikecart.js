@@ -88,12 +88,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.get('/index', function(req, res) {
-  return res.render('index.html', {page: { cart: cart, action: req.param('action') }});
+  return res.render('index.html', {page: { cart: cart, action: req.body.action }});
 });
 
 app.post('/add', function(req, res) {
-  var storeItem = getStoreItem(req.param('id')),
-  quantity = req.param('quantity');
+  var storeItem = getStoreItem(req.body.id),
+  quantity = req.body.quantity;
 
   if (!quantity) {
     quantity = 1;
@@ -105,12 +105,12 @@ app.post('/add', function(req, res) {
     return res.json(addToCart(storeItem, quantity));
   } else {
     storeItem = addToCart(storeItem, quantity);
-    return res.redirect('index?action=add&id=' + req.param('id') + '&quantity=' + storeItem.quantity);
+    return res.redirect('index?action=add&id=' + req.body.id + '&quantity=' + storeItem.quantity);
   }
 });
 
 app.post('/remove', function(req, res) {
-  var quantity = req.param('quantity');
+  var quantity = req.body.quantity;
 
   if (!quantity) {
     quantity = -1;
@@ -119,9 +119,9 @@ app.post('/remove', function(req, res) {
   }
 
   if (req.xhr) {
-    return res.json(removeFromCart(isInCart(req.param('id')), quantity));
+    return res.json(removeFromCart(isInCart(req.body.id), quantity));
   } else {
-    return res.redirect('index?action=remove&id=' + req.param('id')  + '&quantity=' + quantity);
+    return res.redirect('index?action=remove&id=' + req.body.id  + '&quantity=' + quantity);
   }
 });
 

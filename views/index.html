@@ -22,7 +22,7 @@
 				<ul>
 					<li class="product" id="3423">
 						<h2 class="product-name">
-							<a href="#">Worlds Best Item</a>
+							<a>Worlds Best Item</a>
 						</h2>
 
 						<div class="product-info">
@@ -35,14 +35,17 @@
 							<input type="hidden" name="id" value="3423" />
 							<input type="hidden" name="name" value="Worlds Best Item" />
 							<input type="hidden" name="price" value="45.00" />
-							<input type="hidden" name="quantity" value="1" />
+							<input autocomplete="off" type="text" name="quantity" value="1" />
 							<button type="submit" name="productaction" value="add">Add to Cart</button>
-							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
 						</form>
-					</li>
+						<form method="post" action="./remove" name="itemremove">
+							<input type="hidden" name="id" value="3423" />
+							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
+                        </form>
+                    </li>
 					<li class="product" id="1423">
 						<h2 class="product-name">
-							<a href="#">Worlds Second Best Item</a>
+                            <a>Worlds Second Best Item</a>
 						</h2>
 
 						<div class="product-info">
@@ -55,8 +58,11 @@
 							<input type="hidden" name="name" value="Worlds Second Best Item" />
 							<input type="hidden" name="id" value="1423" />
 							<input type="hidden" name="price" value="45.00" />
-							<input type="hidden" name="quantity" value="1" />
+							<input autocomplete="off" type="hidden" name="quantity" value="1" />
 							<button type="submit" name="productaction" value="add">Add to Cart</button>
+						</form>
+						<form method="post" action="./remove" name="itemremove">
+							<input type="hidden" name="id" value="1423" />
 							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
 						</form>
 					</li>
@@ -101,16 +107,17 @@
 			require({
 				baseUrl: '/js/'
 			}, ['js/kwikecart.dojo', 'dojo/query', 'dojo/dom-construct', 'dojo/ready'], 
-			function(store, query, domConstruct, ready) {
+			function(kwikecart, query, domConstruct, ready) {
 				'use strict';
 				ready(function () {
-					var products = [
+                    var products = [
 						{ id: '3423', name: 'Product1', quantity: 1, price: 45.00},
 						{ id: '1423', name: 'Product2', quantity: 1, price: 15.00}
 					],
 					addItemToSidebar = function(itemObj) {
 						cart.find(itemObj.id, function(fndItem, fndIndex) {
-							var htmlStr = '<div id="cart-' + itemObj.id + '">' 
+							console.log(fndItem);
+                            var htmlStr = '<div id="cart-' + itemObj.id + '">' 
 								+ '<div>' + itemObj.name + '</div>' 
 								+ '<div class="quantity">' + itemObj.quantity + '</div>' 
 								+ '</div>';
@@ -128,7 +135,7 @@
 						} 
 					},
 					// Setting up the store, and creating a cart for the user
-					cart = store.create({
+					cart = kwikecart.create({
 						expires: -1,
 						productNode: '.product',
 						beforeAdd: function(items, quantity) {
@@ -161,6 +168,8 @@
 
 						}
 					});
+
+                    console.log(cart.items);
 					
 					//cart.clear(true);
 

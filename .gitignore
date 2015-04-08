@@ -13,6 +13,8 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+*.swp
+*~
 
 # =========================
 # Operating System Files
