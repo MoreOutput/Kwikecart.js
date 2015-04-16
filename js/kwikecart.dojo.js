@@ -9,7 +9,14 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			expires: 1, // Cookie expiration
 			taxMultiplier: 0.06,
 			currency: 'USD',
-			attachFields: '',
+            // Toggle to pass all form data on each call
+            sendAll: false,
+			// Define data that will be sent with all form posts
+            attachFields: [
+                /*
+                    {name: 'firstName', value: 'MoreOutput'}
+                */
+            ],
 			// Names of related DOM Data
 			productNode: '.product',
 			cartItems: '.cart-products',
@@ -25,14 +32,10 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			clearForm: '[name=clearcart]',
 			totalForm: '[name=totalcart]',
 			checkoutForm: '[name=checkout]',
-			/*
-			addAddress: null,
-			removeAddress: null,
-			totalAddress: null,
-			checkoutAddress: null,
-			checkAddress: null,
-			*/
-			// XHR Action Override; will result in client side action being taken only
+			/* 
+                XHR Action Override; will result in client side action being taken only. 
+                Define as a url string to override the form action. Field values will be appended.
+            */ 
 			addAction: true,
 			checkoutAction: true,
 			removeAction: true,
