@@ -1,22 +1,22 @@
-define(['dojo/_base/lang', 'dojo/query','dojo/_base/array', 'dojo/cookie', 'dojo/on', 
-	'dojo/request', 'dojo/dom-form', 'dojo/io-query', 'dojo/ready'], 
+define(['dojo/_base/lang', 'dojo/query','dojo/_base/array', 'dojo/cookie', 'dojo/on',
+	'dojo/request', 'dojo/dom-form', 'dojo/io-query', 'dojo/ready'],
 function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
-	'use strict';	
-	var Cart = function (options) {	
-		this.currentTotal = 0; 
+	'use strict';
+	var Cart = function (options) {
+		this.currentTotal = 0;
 		this.items = [];
 		this.options = {
 			expires: 1, // Cookie expiration
 			taxMultiplier: 0.06,
 			currency: 'USD',
-            // Toggle to pass all form data on each call
-            sendAll: false,
-			// Define data that will be sent with all form posts
-            attachFields: [
-                /*
-                    {name: 'firstName', value: 'MoreOutput'}
-                */
-            ],
+			// Toggle to pass all form data on each call
+			sendAll: false,
+			// Define data that will be sent with all requests
+			attachFields: [
+				/*
+				{name: 'firstName', value: 'MoreOutput'}
+				*/
+			],
 			// Names of related DOM Data
 			productNode: '.product',
 			cartItems: '.cart-products',
@@ -32,10 +32,10 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			clearForm: '[name=clearcart]',
 			totalForm: '[name=totalcart]',
 			checkoutForm: '[name=checkout]',
-			/* 
-                XHR Action Override; will result in client side action being taken only. 
-                Define as a url string to override the form action. Field values will be appended.
-            */ 
+			/*
+			XHR Action Override; cart will not call the server.
+			Define as a url string to override the form action.
+			*/
 			addAction: true,
 			checkoutAction: true,
 			removeAction: true,
@@ -50,52 +50,54 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			beforeTotal: null,
 			// On events -- Fire after the item is added and server response received
 			onCheck: null,
-			onRemove: null,
-			onClear: null,
+			onRemove: null, // Fired each time remove is called
+			onClear: null, // Fired when clear is called, avoids remove and onEmpty
 			onCheckout: null,
-			onAdd: null,
+			onAdd: null, // Fired each time an item is added
 			onDecrement: null, // Fired when an items quantity goes down but not to 0
 			onIncrement: null, // Fired when an items quantity goes up but not on 1
 			onTotal: null,
+			onFirst: null, // Fired when the first item is added into the cart
+			onEmpty: null, // Fired when the cart reaches zero from 1+
 			xhrObj: {handleAs: 'json'}
 		};
 
 		return this;
 	}
 
-	Cart.prototype.create = function (options) {		
+	Cart.prototype.init = function (options) {
 		var cart = this;
 
 		cart.options = lang.mixin(cart.options, options);
 
 		if (typeof cookie('nacart') !== 'undefined' && cart.options.expires !== -1) {
-            cart.setupCartFromCookies();
+			cart.setupCartFromCookies();
 		}
 
 		if (cart.options.expires <= -1) {
-            cookie('nacart', null, {expires: -1});
+			cookie('nacart', null, {expires: -1});
 		}
 
 		arr.forEach(query(cart.options.productNode), function(item, i) {
-            var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
- 				evt.stopPropagation();
-            	evt.preventDefault();
-		        
-            	cart.add(item);
+			var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
+				evt.stopPropagation();
+				evt.preventDefault();
+
+				cart.add(item);
 			}),
 			removeEvt = on(query('#' + item.id + ' ' + cart.options.removeForm)[0], 'submit', function(evt) {
- 				evt.stopPropagation();
-            	evt.preventDefault();
+				evt.stopPropagation();
+				evt.preventDefault();
 
-            	cart.remove(item);
+								cart.remove(item);
 			});
 		});
-        
-        return cart;
+
+		return cart;
 	};
 
 	Cart.prototype.setupCartFromCookies = function (callback) {
-		var cart = this;	
+		var cart = this;
 
 		if (cookie('nacart') !== 'null' && cart.options.expires !== -1) {
 			arr.forEach(JSON.parse(cookie('nacart')), function(item, i) {
@@ -103,12 +105,12 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			});
 		} else {
 			cart.items = [];
-		}	
+		}
 
 		if (typeof callback === 'function') {
 			callback();
-		} 
-	}; 	
+		}
+	};
 
 	Cart.prototype.createItemObj = function (itemData, callback) {
 		var cart = this,
@@ -136,8 +138,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 	Cart.prototype.set = function(items, quantity, callback) {
 		var cart = this,
+		currentCnt = cart.items.length,
 		tmpQuantity;
-	
+
 		if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
 			items = [cart.createItemObj(items)];
 		} else {
@@ -177,11 +180,19 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 					cart.options.onDecrement(item);
 				}
 
+				if (currentCnt === 0 && typeof cart.options.onFirst === 'function') {
+					cart.options.onFirst(item);
+				}
+
+				if (quantity === 0 && typeof cart.options.onEmpty === 'function') {
+					cart.options.onEmpty();
+				}
+
 				if (cookie('nacart')) {
 					cookie('nacart', null, {expires: -1});
-				}			
+				}
 
-				cookie('nacart', JSON.stringify(cart.items), 
+				cookie('nacart', JSON.stringify(cart.items),
 					{expires: cart.options.expires});
 
 				query('#' + item.id).query(cart.options.quantityField)[0].value = item.quantity;
@@ -191,14 +202,14 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		});
 
 		return cart;
-	}	
+	}
 
-	Cart.prototype.add = function (items, quantity, callback) {		
+	Cart.prototype.add = function (items, quantity, callback) {
 		var cart = this,
 		add = true;
- 
+
 		if (typeof cart.options.beforeAdd === 'function') {
-	   		add = cart.options.beforeAdd(items, quantity);
+			add = cart.options.beforeAdd(items, quantity);
 		}
 
 		if (add === true) {
@@ -220,25 +231,29 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 
 				if (cart.options.addAction) {
 					cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
-		      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
-		      			+ '&increment=' + increment + addedFields, cart.options.xhrObj).then(function(r) {
-		      			if (typeof cart.options.onAdd === 'function') {
+
+					request.post(query(cart.options.addForm)[0].action + '?'
+						+ ioQuery.objectToQuery(cart.options.xhrObj.data)
+						+ '&increment=' + increment + addedFields, cart.options.xhrObj).then(function(r) {
+
+						if (typeof cart.options.onAdd === 'function') {
 							if (typeof callback !== 'function') {
-   								cart.options.onAdd(item, quantity, r);
-   							} else {
-   								cart.options.onAdd(item, quantity, r);
-   								callback(item, quantity, rv);
-   							}
+								cart.options.onAdd(item, quantity, r);
+							} else {
+								cart.options.onAdd(item, quantity, r);
+								callback(item, quantity, rv);
+							}
 						}
+
 						cart.total();
 					});
-		      	} else {
-		      		cart.total();
-		      		
-		      		if (typeof callback === 'function') {
+				} else {
+					cart.total();
+
+					if (typeof callback === 'function') {
 						callback(items, quantity, null);
 					}
-		      	}
+				}
 			});
 		}
 
@@ -254,9 +269,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 			arr.forEach(cart.items, function (item, i) {
 				if (id === item.id) {
 					fndItem = item;
-					fndIndex = i;		
+					fndIndex = i;
 				}
-			});	
+			});
 
 			if (typeof callback === 'function') {
 				return callback(fndItem, fndIndex);
@@ -270,7 +285,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 				return fndItem;
 			}
 		}
-	};		
+	};
 
 	Cart.prototype.remove = function (items, quantity, callback) {
 		var cart = this,
@@ -281,7 +296,7 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		   		remove = cart.options.beforeRemove(items, quantity);
 			}
 
-			if (remove === true) { 
+			if (remove === true) {
 				if (quantity > 0) {
 					quantity = -Math.abs(quantity);
 				} else if (typeof quantity === 'function') {
@@ -295,25 +310,27 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 					if (cart.options.removeAction) {
 						cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.removeForm)[0]);
 
-			      		request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
-			      			+ '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
-			      			if (typeof cart.options.onRemove === 'function') {
+						request.post(query(cart.options.removeForm)[0].action + '?'
+							+ ioQuery.objectToQuery(cart.options.xhrObj.data)
+							+ '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
+
+							if (typeof cart.options.onRemove === 'function') {
 								if (typeof callback !== 'function') {
-	   								cart.options.onRemove(item, quantity, r);
-	   							} else {
-	   								cart.options.onRemove(item, r);
-	   								callback(item, quantity, r);
-	   							}
+									cart.options.onRemove(item, quantity, r);
+								} else {
+									cart.options.onRemove(item, r);
+									callback(item, quantity, r);
+								}
 							}
 							cart.total();
 						});
-			      	} else {
-			      		cart.total();
-			      		
-			      		if (typeof callback === 'function') {
+					} else {
+						cart.total();
+
+						if (typeof callback === 'function') {
 							callback(items, quantity, null);
 						}
-			      	}
+					}
 				});
 			}
 		} else {
@@ -346,15 +363,15 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 					}
 					cart.total();
 				});
-		    } else {
-		    	cart.total();
+			} else {
+				cart.total();
 
-		    	if (typeof callback === 'function') {
+				if (typeof callback === 'function') {
 					callback(false);
 				}
-		    }
+			}
 
-		    cookie('nacart', null, {expires: -1});
+			cookie('nacart', null, {expires: -1});
 		}
 	};
 
@@ -363,15 +380,15 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		cart = this;
 
 		if (typeof cart.options.beforeCheck === 'function') {
-	   		check = cart.options.beforeCheck(items, quantity);
+			check = cart.options.beforeCheck(items, quantity);
 		}
 
 		if (check) {
 			cart.find(itemID, function (fndItem, fndIndex) {
 				if (fndItem) {
-					cart.options.xhrObj.data = domForm.toObject(query('#' + fndItem.id).query(cart.options.addForm)[0]) 
-                    +  domForm.toObject(query(cart.options.checkForm)[0]);
-					
+					cart.options.xhrObj.data = domForm.toObject(query('#' + fndItem.id).query(cart.options.addForm)[0])
+						+ domForm.toObject(query(cart.options.checkForm)[0]);
+
 					request.post(query(cart.options.checkForm)[0].action, cart.options.xhrObj).then(function(r) {
 						if (typeof cart.options.onCheck === 'function') {
 							if (typeof callback !== 'function') {
@@ -393,12 +410,12 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		cart = this;
 
 		if (typeof cart.options.beforeTotal === 'function') {
-	   		total = cart.options.beforeTotal(items, quantity);
+			total = cart.options.beforeTotal(items, quantity);
 		}
 
 		if (total) {
 			cart.items.forEach(function (item, i) {
-				cart.currentTotal+= parseFloat(item.price * item.quantity).toFixed(2);	
+				cart.currentTotal += parseFloat(item.price * item.quantity).toFixed(2);
 			});
 
 			if (cart.options.totalAction === true && callServer === true) {
@@ -411,9 +428,9 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 						}
 					}
 				});
-		    } else if (typeof callback === 'function') {
-		    	callback(cart.currentTotal);
-		    }
+			} else if (typeof callback === 'function') {
+				callback(cart.currentTotal);
+			}
 		}
 	};
 
@@ -421,6 +438,6 @@ function(lang, query, arr, cookie, on, request, domForm, ioQuery, ready) {
 		var cart = this,
 		checkout = true;
 	};
-	
+
 	return new Cart();
 });

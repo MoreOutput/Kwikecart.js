@@ -1,7 +1,7 @@
 
-	'use strict';	
-	var Kwikecart = function (options) {	
-		this.currentTotal = 0; 
+	'use strict';
+	var Kwikecart = function (options) {
+		this.currentTotal = 0;
 		this.items = [];
 		this.options = {
 			expires: 1, // Cookie expiration
@@ -45,6 +45,7 @@
 			onDecrement: null, // Fired when an items quantity goes down but not to 0
 			onIncrement: null, // Fired when an items quantity goes up but not on 1
 			onTotal: null,
+			onFirst: null,
 			xhrObj: {handleAs: 'json'}
 		};
 
@@ -52,20 +53,20 @@
 	},
 	Cart = new Kwikecart();
 
-	Kwikecart.prototype.create = function (options) {		
+	Kwikecart.prototype.create = function (options) {
 		var cart = this;
 
 		cart.options = lang.mixin(cart.options, options);
 
 		if (typeof cookie('nacart') !== 'undefined') {
 			cart.setupCartFromCookies();
-		}			
+		}
 
 		arr.forEach(query(cart.options.productNode), function(item) {
 			var addEvt = on(query('#' + item.id + ' ' + cart.options.addForm)[0], 'submit', function(evt) {
  				evt.stopPropagation();
             	evt.preventDefault();
-			
+
             	cart.add(item);
 			}),
 			removeEvt = on(query('#' + item.id + ' ' + cart.options.removeForm)[0], 'submit', function(evt) {
@@ -80,7 +81,7 @@
 	};
 
 	Kwikecart.prototype.setupCartFromCookies = function (callback) {
-		var cart = this;	
+		var cart = this;
 
 		if (cookie('nacart') !== 'null' && cart.options.expires !== -1) {
 			arr.forEach(JSON.parse(cookie('nacart')), function(item, i) {
@@ -88,12 +89,12 @@
 			});
 		} else {
 			cart.items = [];
-		}	
+		}
 
 		if (typeof callback === 'function') {
 			callback();
-		} 
-	}; 	
+		}
+	};
 
 	Kwikecart.prototype.createItemObj = function (itemData, callback) {
 		var cart = this,
@@ -123,7 +124,7 @@
 		var cart = this,
 		tmpQuantity,
 		i = 0;
-	
+
 		if (typeof items === 'string' || (typeof items === 'object' && !items.length)) {
 			items = [cart.createItemObj(items)];
 		} else {
@@ -165,9 +166,9 @@
 
 				if (cookie('nacart')) {
 					cookie('nacart', null, {expires: -1});
-				}			
-				
-				cookie('nacart', JSON.stringify(cart.items), 
+				}
+
+				cookie('nacart', JSON.stringify(cart.items),
 					{expires: cart.options.expires});
 
 				query('#' + item.id).query(cart.options.quantityField)[0].value = item.quantity;
@@ -177,12 +178,12 @@
 		});
 
 		return cart;
-	}	
+	}
 
-	Kwikecart.prototype.add = function (items, quantity, callback) {		
+	Kwikecart.prototype.add = function (items, quantity, callback) {
 		var cart = this,
 		add = true;
- 
+
 		if (typeof cart.options.beforeAdd === 'function') {
 	   		add = cart.options.beforeAdd(items, quantity);
 		}
@@ -206,7 +207,7 @@
 
 				if (cart.options.addAction) {
 					cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.addForm)[0]);
-		      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
+		      		request.post(query(cart.options.addForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data)
 		      			+ '&increment=' + increment + addedFields, cart.options.xhrObj).then(function(r) {
 		      			if (typeof cart.options.onAdd === 'function') {
 							if (typeof callback !== 'function') {
@@ -220,7 +221,7 @@
 					});
 		      	} else {
 		      		cart.total();
-		      		
+
 		      		if (typeof callback === 'function') {
 						callback(items, quantity, null);
 					}
@@ -241,9 +242,9 @@
 			arr.forEach(cart.items, function (item, i) {
 				if (id === item.id) {
 					fndItem = item;
-					fndIndex = i;		
+					fndIndex = i;
 				}
-			});	
+			});
 
 			if (typeof callback === 'function') {
 				return callback(fndItem, fndIndex);
@@ -257,7 +258,7 @@
 				return fndItem;
 			}
 		}
-	};		
+	};
 
 	Kwikecart.prototype.remove = function (items, quantity, callback) {
 		var cart = this,
@@ -268,7 +269,7 @@
 		   		remove = cart.options.beforeRemove(items, quantity);
 			}
 
-			if (remove === true) { 
+			if (remove === true) {
 				if (quantity > 0) {
 					quantity = -Math.abs(quantity);
 				} else if (typeof quantity === 'function') {
@@ -282,7 +283,7 @@
 					if (cart.options.removeAction) {
 						cart.options.xhrObj.data = domForm.toObject(query('#' + item.id).query(cart.options.removeForm)[0]);
 
-			      		request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data) 
+			      		request.post(query(cart.options.removeForm)[0].action + '?' + ioQuery.objectToQuery(cart.options.xhrObj.data)
 			      			+ '&decrement=' + decrement, cart.options.xhrObj).then(function(r) {
 			      			if (typeof cart.options.onRemove === 'function') {
 								if (typeof callback !== 'function') {
@@ -296,7 +297,7 @@
 						});
 			      	} else {
 			      		cart.total();
-			      		
+
 			      		if (typeof callback === 'function') {
 							callback(items, quantity, null);
 						}
@@ -359,7 +360,7 @@
 			cart.find(itemID, function (fndItem, fndIndex) {
 				if (fndItem) {
 					cart.options.xhrObj.data = domForm.toObject(query('#' + fndItem.id).query(cart.options.addForm)[0]) +  domForm.toObject(query(cart.options.checkForm)[0]);
-					
+
 					request.post(query(cart.options.checkForm)[0].action, cart.options.xhrObj).then(function(r) {
 						if (typeof cart.options.onCheck === 'function') {
 							if (typeof callback !== 'function') {
@@ -387,7 +388,7 @@
 
 		if (total) {
 			cart.items.forEach(function (item, i) {
-				cart.currentTotal+= parseFloat(item.price * item.quantity).toFixed(2);	
+				cart.currentTotal+= parseFloat(item.price * item.quantity).toFixed(2);
 			});
 
 			if (cart.options.totalAction === true && callServer === true) {
@@ -410,10 +411,10 @@
 		var cart = this,
 		checkout = true;
 	};
-	
+
 	Kwikecart.prototype.xhr = function(method, url, async, callback) {
 		if (typeof XMLHttpRequest !== 'undefined') {
-        	return new XMLHttpRequest();  
+        	return new XMLHttpRequest();
     	}
 	}
 

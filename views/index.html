@@ -3,198 +3,172 @@
 	<head>
 		<title>Kwikecart</title>
 		<meta charset="utf-8" />
+		<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css" rel="stylesheet" />
+		<style>
+body,html {
+padding: 0;
+margin: 0;
+background-color: #ccc;
+}
+h2 {
+font-size: 1.25em;
+}
+.container {
+max-width: 50%;
+background-color: #fff;
+padding: 1em;
+}
+.row {
+padding: .5em;
+}
+#cart-nav-wrapper {  
+width: 100%;
+background-color: #fff;
+border-bottom: 1px solid #aaa;
+}
+#cart-nav {
+
+}
+.cart-item {
+border: 1px solid red;
+}
+.product {
+border: 1px solid #888;
+padding: .25em;
+}
+.product .product-image {
+	width: 125px;
+	height: 150px;
+	background-color: #333;
+}
+.product .btn-remove {
+	font-size: .5em;
+	background-color: #fff;
+}
+.media {
+	margin: 0;
+}
+		</style>
 	</head>
 	<body>
-		<div>
-			<div id="msg">
-				<% if (page.action) { %>
-					<% if (page.action === 'add') { %>
-						Item Added.
-					<% } else if (page.action === 'remove') { %>
-						Item Removed.
-					<% } %>
-				<% } %>
-			</div>
-			<section id="store-index">		
-				<header>
-					<h1>Products</h1>		
-				</header>	
-				<ul>
-					<li class="product" id="3423">
-						<h2 class="product-name">
-							<a>Worlds Best Item</a>
-						</h2>
+		<div id="cart-nav-wrapper">
+			<section id="cart-nav" class="container">
+				<div id="cart" class="row">
+					<div class="col-md-12 cart-products">
+					</div>
 
-						<div class="product-info">
-							<div class="product-pid">3423</div>
-							<div class="product-price">$45.00</div>
-						</div>
+					<div class="col-md-12 cart-total">
+					</div>
 
-						<!-- Our Actions that Kwikicart.js will call on each related call -->
-						<form method="post" action="./add" name="itemadd">
-							<input type="hidden" name="id" value="3423" />
-							<input type="hidden" name="name" value="Worlds Best Item" />
-							<input type="hidden" name="price" value="45.00" />
-							<input autocomplete="off" type="hidden" name="quantity" value="1" />
-							<button type="submit" name="productaction" value="add">Add to Cart</button>
-						</form>
-						<form method="post" action="./remove" name="itemremove">
-							<input type="hidden" name="id" value="3423" />
-							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
-                        </form>
-                    </li>
-					<li class="product" id="1423">
-						<h2 class="product-name">
-                            <a>Worlds Second Best Item</a>
-						</h2>
-
-						<div class="product-info">
-							<div class="product-pid">1423</div>
-							<div class="product-price">$45.00</div>
-						</div>
-
-						<!-- Our Actions that Kwikicart.js will call on each related call -->
-						<form method="post" action="./add" name="itemadd">
-							<input type="hidden" name="name" value="Worlds Second Best Item" />
-							<input type="hidden" name="id" value="1423" />
-							<input type="hidden" name="price" value="45.00" />
-							<input autocomplete="off" type="hidden" name="quantity" value="1" />
-							<button type="submit" name="productaction" value="add">Add to Cart</button>
-						</form>
-						<form method="post" action="./remove" name="itemremove">
-							<input type="hidden" name="id" value="1423" />
-							<button type="submit" name="productaction" value="remove">Remove from Cart</button>
-						</form>
-					</li>
-				</ul>
+					<form class="hidden" id="checkoutfrm" action="./checkout" method="post" name="cartcheck out">
+						<input type="hidden" name="cmd" value="_cart" />
+						<input type="hidden" name="redirect_cmd" value="_xclick" />
+						<input type="hidden" name="business" value="info@example.com" />
+						<input type="hidden" name="no_shipping" value="1"/>
+						<input type="hidden" name="return" value="http://www.example.com" />
+						<input type="hidden" name="cancel_return" value="http://www.example.com" />
+						<input type="hidden" name="notify_url" value="http://www.example.com/ppcallback" />
+						<input type="hidden" name="invoice" value="" />
+						<input type="hidden" name="trackingid" value="" />
+						<input type="hidden" name="currency_code" value="USD" />
+						<input type="hidden" name="upload" value="1" />
+						<input type="hidden" id="total" value="" name="total" />
+						<button class="btn btn-primary" type="submit" name="checkout" id="submitbtn">Checkout</button>
+					</form>
+				</div>
 			</section>
 		</div>
-		<aside id="sidebar">
-			<h1>Cart</h1>
-			<section id="cart">	
-				<ul class="cart-products">
-				</ul>
 
-				<div class="cart-total">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<div class="alert">
+						<% if (page.action) { %>
+							<% if (page.action === 'add') { %>
+								Item Added.
+							<% } else if (page.action === 'remove') { %>
+								Item Removed.
+							<% } %>
+						<% } %>
+					</div>
 				</div>
+			</div>
 
-				<form id="checkoutfrm" action="./checkout" method="post" name="cartcheck out">	
-					<input type="hidden" name="cmd" value="_cart" />
-					<input type="hidden" name="redirect_cmd" value="_xclick" />
-					<input type="hidden" name="business" value="info@example.com" />
-					<input type="hidden" name="no_shipping" value="1"/>
-					<input type="hidden" name="return" value="http://www.example.com" />
-					<input type="hidden" name="cancel_return" value="http://www.example.com" />
-					<input type="hidden" name="notify_url" value="http://www.example.com/ppcallback" />
-					<input type="hidden" name="invoice" value="" />
-					<input type="hidden" name="trackingid" value="" />
-					<input type="hidden" name="currency_code" value="USD" />
-					<input type="hidden" name="upload" value="1" />	
-					<input type="hidden" id="total" value="" name="total" />
-					<button type="submit" name="checkout" id="submitbtn">Checkout</button>
-				</form> 
+			<section id="store-index">
+				<div class="col-1 row">
+					<div class="product col-md-5" id="3423">
+						<div class="media">
+							<div class="product-image media-left">
+								<img src="" />
+							</div>
+
+							<div class="product-info media-body">
+								<h2 class="product-name media-heading">
+									<a href="#">Worlds Best Item</a>
+								</h2>
+
+								<div>
+									<div class="product-pid">3423</div>
+									<div class="product-price">$45.00</div>
+								</div>
+
+								<!-- Our Actions that Kwikicart.js will call on each related call -->
+								<form class="pull-left" method="post" action="./add" name="itemadd">
+									<input type="hidden" name="id" value="3423" />
+									<input type="hidden" name="name" value="Worlds Best Item" />
+									<input type="hidden" name="price" value="45.00" />
+									<input autocomplete="off" type="hidden" name="quantity" value="0" />
+									<button class="btn btn-primary" type="submit" name="productaction" value="add">Add to Cart</button>
+								</form>
+								<form method="post" action="./remove" name="itemremove">
+									<input type="hidden" name="id" value="3423" />
+									<button class="btn btn-remove" type="submit" name="productaction" value="remove">Remove from Cart</button>
+								</form>
+							</div>
+						</div>
+					</div>
+
+					<div class="product col-md-5 col-md-offset-2" id="1423">
+						<div class="media">
+							<div class="product-image media-left">
+								<img src="" />
+							</div>
+
+							<div class="product-info media-body">
+								<h2 class="product-name media-heading">
+									<a href="#">Worlds Second Best Item</a>
+								</h2>
+
+								<div class="product-info">
+									<div class="product-pid">1423</div>
+									<div class="product-price">$45.00</div>
+								</div>
+
+								<form class="pull-left" method="post" action="./add" name="itemadd">
+									<input type="hidden" name="name" value="Worlds Second Best Item" />
+									<input type="hidden" name="id" value="1423" />
+									<input type="hidden" name="price" value="45.00" />
+									<input autocomplete="off" type="hidden" name="quantity" value="0" />
+									<button class="btn btn-primary" type="submit" name="productaction" value="add">Add to Cart</button>
+								</form>
+								<form method="post" action="./remove" name="itemremove">
+									<input type="hidden" name="id" value="1423" />
+									<button class="btn btn-remove" type="submit" name="productaction" value="remove">Remove from Cart</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
 			</section>
-		</aside>
-
+		</div>
 		<!-- defining the expected cart actions -->
-		<form method="get" action="./check" name="itemcheck"></form>
-		<form method="get" action="./total" name="totalcart"><button type="submit">Total Cart</button></form>
-		<form method="post" action="./clear" name="clearcart"><button type="submit">Clear Cart</button></form>
+		<div class="hidden">
+			<form method="get" action="./check" name="itemcheck"></form>
+			<form method="get" action="./total" name="totalcart"><button type="submit">Total Cart</button></form>
+			<form method="post" action="./clear" name="clearcart"><button type="submit">Clear Cart</button></form>
+		</div>
 
-		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.9.2/dojo/dojo.js"></script>
-		<script>
-			// kwikicart.js
-			require({
-				baseUrl: '/js/'
-			}, ['js/kwikecart.dojo', 'dojo/query', 'dojo/dom-construct', 'dojo/ready'], 
-			function(kwikecart, query, domConstruct, ready) {
-				'use strict';
-				ready(function () {
-                    var products = [
-						{ id: '3423', name: 'Product1', quantity: 1, price: 45.00},
-						{ id: '1423', name: 'Product2', quantity: 1, price: 15.00}
-					],
-					addItemToSidebar = function(itemObj) {
-						cart.find(itemObj.id, function(fndItem, fndIndex) {
-							console.log(fndItem);
-                            var htmlStr = '<div id="cart-' + itemObj.id + '">' 
-								+ '<div>' + itemObj.name + '</div>' 
-								+ '<div class="quantity">' + itemObj.quantity + '</div>' 
-								+ '</div>';
-
-							if (query('#cart-' + itemObj.id).length > 0) {
-								domConstruct.place(htmlStr, query('#cart-' + itemObj.id)[0], 'replace');
-							} else {
-								domConstruct.place(htmlStr, query('.cart-products')[0], 'last');
-							}
-						});
-					},
-					removeItemFromSidebar = function(itemObj) {
-						if (query('#cart-' + itemObj.id).length > 0) {
-							domConstruct.destroy(query('#cart-' + itemObj.id)[0]);
-						} 
-					},
-					// Setting up the store, and creating a cart for the user
-					cart = kwikecart.create({
-						expires: -1,
-						productNode: '.product',
-						beforeAdd: function(items, quantity) {
-							console.log('beforeAdd');
-							return true;
-						},
-						onAdd: function(item, response) {
-							console.log('onAdd');
-							if (item) {
-								addItemToSidebar(item);
-							}
-						},
-						beforeRemove: function(items, quantity) {
-							console.log('beforeRemove');
-							return true;
-						},
-						onRemove: function(item, response) {
-							console.log('onRemove');
-							if (item) {
-								removeItemFromSidebar(item);
-							}
-						},
-						onIncrement: function(item, response) {
-							console.log('onIncrement');
-						},
-						onDecrement: function(item, response) {
-							console.log('onDecrement');
-						},
-						onClear: function(clearedCookies, response) {
-
-						}
-					});
-
-                    console.log(cart.items);
-					
-					//cart.clear(true);
-
-					//cart.check('3423');
-				
-					// Removing, in .product expected form name: itemremove
-					//cart.remove('product-3423'); // Fully removes product
-					//cart.remove(products); // Fully removes product set
-					//cart.remove(); // Fully removes all products
-					//cart.remove(false); // Removes all but keeps cookie data
-					// Decrement, in .product expected form name: itemadd
-					//cart.remove('product-3423', 1); 
-
-					// Data Checking, in .product expected form name: itemcheck
-					//cart.check('product-3423'); // Get item data from server
-					//cart.check('product-3423', false); // Get item data from markup
-					
-					// Totaling, expected form name: totalcart
-					//cart.total(); // From DOM data
-					//cart.total(true); // From server
-
-					// Checkout, expected form name: checkout
-					//cart.checkout() // Routing to next area
-				});
-			});
-		</script>
+		<script src="https://ajax.googleapis.com/ajax/libs/dojo/1.10.4/dojo/dojo.js"></script>
+		<script src="js/example.js"></script>
 	</body>
 </html>

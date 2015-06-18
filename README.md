@@ -1,4 +1,4 @@
-Kwikecart.js 0.5.0
+Kwikecart.js 0.7.0
 ===========================
 Kwikecart is a client side shopping cart written with progressive enhancement in mind. Kwikecart generates no markup (use onAdd() which passed you the added item to place the item into the DOM), utilizes modular loading and aims to keep the core script as accessible and easy to work with as possible. The script comes with a simple express.js application (store.js) for local play.
 
@@ -42,28 +42,35 @@ Lets assume a product on the page is marked up like the following:
 <form method="get" action="./checkout" name="checkout"></form>
 
 ```
-## Loading and Setup for DOJO 1.9+ ##
+## Loading and Setup for DOJO 1.7+ ##
 ```js
 require({
 	baseUrl: 'js/'
-}, ['js/kwikecart', 'dojo/ready'], 
+}, ['js/kwikecart', 'dojo/ready'],
 function(store, ready) {
 	'use strict';
-	ready(function () {	
-		cart = store.create(); // Success!
+	ready(function () {
+		cart = store.init(); // Success!
 		// Assume the example code is in here.
 	});
 });
 ```
 
-When creating the cart you can define any of the following options in a passed object:
+When initializing the cart you can define any of the following options in a passed object:
 ```js
 {
 	expires: 1, // Cookie expiration
 	taxMultiplier: 0.06,
 	currency: 'USD',
-	attachFieldIDs: false,
-	// Related DOM Data
+	// Toggle to pass all form data on each call
+	sendAll: false,
+	// Define data that will be sent with all requests
+	attachFields: [
+		/*
+		{name: 'firstName', value: 'MoreOutput'}
+		*/
+	],
+	// Names of related DOM Data
 	productNode: '.product',
 	cartItems: '.cart-products',
 	cartTotal: '.cart-total',
@@ -78,7 +85,10 @@ When creating the cart you can define any of the following options in a passed o
 	clearForm: '[name=clearcart]',
 	totalForm: '[name=totalcart]',
 	checkoutForm: '[name=checkout]',
-	// XHR Action Override; will result in client side action being taken only
+	/*
+	XHR Action Override; cart will not call the server.
+	Define as a url string to override the form action.
+	*/
 	addAction: true,
 	checkoutAction: true,
 	removeAction: true,
@@ -93,13 +103,15 @@ When creating the cart you can define any of the following options in a passed o
 	beforeTotal: null,
 	// On events -- Fire after the item is added and server response received
 	onCheck: null,
-	onRemove: null,
-	onClear: null,
+	onRemove: null, // Fired each time remove is called
+	onClear: null, // Fired when clear is called, avoids remove and onEmpty
 	onCheckout: null,
-	onAdd: null,
+	onAdd: null, // Fired each time an item is added
 	onDecrement: null, // Fired when an items quantity goes down but not to 0
 	onIncrement: null, // Fired when an items quantity goes up but not on 1
 	onTotal: null,
+	onFirst: null, // Fired when the first item is added into the cart
+	onEmpty: null, // Fired when the cart reaches zero from 1+
 	xhrObj: {handleAs: 'json'}
 }
 ```
@@ -118,7 +130,7 @@ the form action above.
 
 By ID:
 ```js
-cart.add('product-3423'); 
+cart.add('product-3423');
 ```
 Single Item:
 ```js
@@ -142,7 +154,7 @@ cart.add('product-3423');  // +1
 
 You can set the quantity by giving the wanted total.
 ```js
-cart.add('product-3423', 100); 
+cart.add('product-3423', 100);
 ```
 
 ## Remove with cart.remove(items, quantity, callback) ##
@@ -154,7 +166,7 @@ By ID:
 cart.remove('product-3423'); // Fully removes item
 ```
 
-Array of items: 
+Array of items:
 ```js
 products = ['product-3423', 'product-3430'];
 cart.remove(products); // Fully removes items
@@ -191,7 +203,7 @@ cart.items;
 
 Finding item in the cart, null if its not there:
 ```js
-cart.find('product-3430'); 
+cart.find('product-3430');
 ```
 
 DOM outline to item object:
@@ -199,7 +211,7 @@ DOM outline to item object:
 cart.createItemObj('product-3430');
 ```
 
-Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart. 
+Items are only stored in the cart/cookie as their object representations. The attached id must match its dom counterpart.
 
 ## Check / Refresh Item Data ##
 You can query the server to refresh item data with check().
@@ -229,15 +241,15 @@ is added via add().
 ## Events ##
 
 Before events are fired before the action begins to process. Before events
-must return true or the action will be halted. On events are fired at the end of action processing. 
+must return true or the action will be halted. On events are fired at the end of action processing.
 
-Events return the values expected in the action, aside from callback, plus any server response. See onAdd below for an example: 
+Events return the values expected in the action, aside from callback, plus any server response. See onAdd below for an example:
 
 ```js
-beforeCheck: null, 
-beforeRemove: null, 
-beforeClear: null, 
-beforeCheckout: null, 
+beforeCheck: null,
+beforeRemove: null,
+beforeClear: null,
+beforeCheckout: null,
 beforeAdd: null,
 beforeTotal: null,
 
@@ -250,16 +262,19 @@ onAdd: function(itemsPassedToAdd, quantityPassedToAdd, responseFromAddServerCall
 },
 onDecrement: null, // Fired when an items quantity goes down but not to 0
 onIncrement: null, // Fired when an items quantity goes up but not on 1
+onFirst: null,
 onTotal: null
 ```
 
 ## Preventing calls to the server ##
 
-To prevent a call to the server toggle the following cart options:
+To prevent a call to the server toggle the following cart options to false. You can override the post action by passing in
+a string.
+
 ```js
 addAction: true,
 checkoutAction: true,
-removeAction: true,
-clearAction: true,
-totalAction: true,
+removeAction: false, // remove will not call the server
+clearAction: '/reset', // clear now requests the 'reset' end point.
+totalAction: true
 ```
